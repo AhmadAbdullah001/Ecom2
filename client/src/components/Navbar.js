@@ -14,8 +14,9 @@ function Navbar(props) {
   // Fetch products from context
   const getProducts = async () => {
     let item = await fetchproducts();
-    setItems(item);
-    setFilteredItems(item); // Initially, show all items
+    const productList = Array.isArray(item) ? item : [];
+    setItems(productList);
+    setFilteredItems(productList); // Initially, show all items
   };
 
   useEffect(() => {
@@ -27,7 +28,7 @@ function Navbar(props) {
     const searchQuery = e.target.value;
     setQuery(searchQuery);
     const temp = items.filter(item =>
-      item.head.toLowerCase().includes(searchQuery.toLowerCase())
+      (item.head || "").toLowerCase().includes(searchQuery.toLowerCase())
     );
     setFilteredItems(temp);
   };

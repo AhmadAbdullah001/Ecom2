@@ -16,7 +16,7 @@ function Home(props) {
   const [items,setitems]=useState([]);
   const getProductArray = async () => {
     const temp = await fetchproducts(); // Wait for the Promise to resolve
-    const productArray = Object.values(temp); // Now temp contains the product data
+    const productArray = Array.isArray(temp) ? temp : []; // Now temp contains the product data
     // console.log(productArray); // It should now print 'object' (because it's an array)
     // console.log(Array.isArray(productArray)); // This should print 'true' because it's an array
     console.log(productArray)

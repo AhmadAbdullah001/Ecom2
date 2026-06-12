@@ -16,7 +16,12 @@ router.post('/addproduct',async(req,res)=>{
     }
 })
 router.get('/fetchproducts',async(req,res)=>{
-    const list=await product.find()
-    res.json(list)
+    try {
+        const list=await product.find()
+        res.json(list)
+    } catch (error) {
+        console.error(error.message)
+        res.status(500).json({ error: "Internal Server Error" })
+    }
 })
 module.exports=router

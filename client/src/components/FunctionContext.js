@@ -79,10 +79,15 @@ function FunctionContext(props) {
         `${API_HOST}/api/product/fetchproducts`
       );
 
+      if (!res.ok) {
+        throw new Error(`Failed to fetch products: ${res.status}`);
+      }
+
       return await res.json();
 
     } catch (err) {
       console.error(err);
+      return [];
     }
   };
 
