@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import itemContext from './Context';
-import '../components/style.css'
+import itemContext from '../context/Context';
+
 function Navbar(props) {
   const context = useContext(itemContext);
   const { fetchproducts } = context;

@@ -1,17 +1,17 @@
 // App.js
 import React, { useState } from 'react';
 import Navbar from './components/Navbar';
-import Home from './components/Home';
 import Alert from './components/Alert';
-import Cart from './components/Cart';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Login from './components/Login';
-import Signup from './components/Signup';
-import Itemdetails from './components/Itemdetails';
-import FunctionContext from './components/FunctionContext';
-import BuyPage from './components/BuyPage';
-import Orders from './components/Orders';
-import ContactUs from './components/ContactUs';
+import Home from './pages/Home';
+import Cart from './pages/Cart';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import Itemdetails from './pages/Itemdetails';
+import FunctionContext from './context/FunctionContext';
+import BuyPage from './pages/BuyPage';
+import Orders from './pages/Orders';
+import ContactUs from './pages/ContactUs';
 function App() {
   const [alert, setAlert] = useState(null);
 

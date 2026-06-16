@@ -18,7 +18,7 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "both": "concurrently \"npm run start\" \"nodemon ./backend/index.js\"",
+    "both": "concurrently \"npm run start\" \"nodemon ../server/index.js\"",
     "start": "cross-env PORT=3001 react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",

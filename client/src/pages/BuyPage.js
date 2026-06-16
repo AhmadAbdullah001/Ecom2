@@ -1,6 +1,6 @@
   import React, { useEffect,useContext, useState } from 'react'
   import { useNavigate } from 'react-router-dom';
-  import itemContext from './Context';
+  import itemContext from '../context/Context';
   import { useLocation } from 'react-router-dom'
   import { API_HOST } from '../config';
   function BuyPage(props) {

@@ -1,6 +1,6 @@
-import React, { useContext, useEffect, useState} from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import itemContext from "./Context";
+import itemContext from "../context/Context";
 function Home(props) {
 
   const nav=useNavigate()

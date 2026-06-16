@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from "react";
-import itemContext from "./Context";
 import { useNavigate } from "react-router-dom";
+import itemContext from "../context/Context";
 import { useLocation } from "react-router-dom";
 
 function Itemdetails(props) {
