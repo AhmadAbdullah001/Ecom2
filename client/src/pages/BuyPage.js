@@ -3,6 +3,7 @@
   import itemContext from '../context/Context';
   import { useLocation } from 'react-router-dom'
   import { API_HOST } from '../config';
+  import { imageFallback, normalizeImageSrc } from '../utils/images';
   function BuyPage(props) {
     let loc= useLocation()
     let nav=useNavigate()
@@ -22,9 +23,9 @@
     const[img,setimg]=useState();
     useEffect(() => {
       if (Array.isArray(currentitem.current.imgurl)) {
-          setimg(currentitem.current.imgurl[0]);
+          setimg(normalizeImageSrc(currentitem.current.imgurl[0]));
         } else {
-          setimg(currentitem.current.imageURI);
+          setimg(normalizeImageSrc(currentitem.current.imageURI));
       }
       
   }, [currentitem]); // Run only when currentitem changes
@@ -113,7 +114,7 @@
               <div className='body d-flex'>
 
                 <div className='pic mx-4'>
-                  <img src={img} alt={currentitem.current.title || currentitem.current.head || "Selected item"} style={{height:"200px",width:"200px",objectFit:"contain",marginTop:"10vh",marginLeft:"2vw"}}/>
+                  <img src={img} alt={currentitem.current.title || currentitem.current.head || "Selected item"} onError={imageFallback} style={{height:"200px",width:"200px",objectFit:"contain",marginTop:"10vh",marginLeft:"2vw"}}/>
                   <div style={{width:"10vw",display:"flex",justifyContent:"center",alignItems:"center",marginLeft:"2vw"}}>
                     <button className='mx-3 my-3' onClick={Sub} style={{borderRadius:"20px",height:"30px",width:"30px",display:"flex",alignItems:"center",justifyContent:"center",backgroundColor:"black",color:"white",border:"none"}}><b>-</b></button>
                     <input type="number" value={qty}onChange={(e) => setqty(Number(e.target.value))} style={{ width: "50px" }}/>

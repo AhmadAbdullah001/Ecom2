@@ -1,151 +1,229 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import itemContext from "../context/Context";
+import { imageFallback, normalizeImageSrc } from "../utils/images";
+import "../styles/home.css";
+
 function Home(props) {
+  const nav = useNavigate();
+  const context = useContext(itemContext);
+  const { addtocart, fetchproducts } = context;
+  const [items, setItems] = useState([]);
 
-  const nav=useNavigate()
-  const context=useContext(itemContext)
-  const{addtocart,fetchproducts}=context
-  const Gotodetails=(item)=>{
-
-
-    nav('/itemdetails',{state:item})
-    
-  }
-  // const items=[];
-  const [items,setitems]=useState([]);
-  const getProductArray = async () => {
-    const temp = await fetchproducts(); // Wait for the Promise to resolve
-    const productArray = Array.isArray(temp) ? temp : []; // Now temp contains the product data
-    // console.log(productArray); // It should now print 'object' (because it's an array)
-    // console.log(Array.isArray(productArray)); // This should print 'true' because it's an array
-    console.log(productArray)
-    setitems(productArray)
+  const goToDetails = (item) => {
+    nav("/itemdetails", { state: item });
   };
-  
-  useEffect(()=>{
+
+  const getProductArray = useCallback(async () => {
+    const temp = await fetchproducts();
+    setItems(Array.isArray(temp) ? temp.filter(Boolean) : []);
+  }, [fetchproducts]);
+
+  useEffect(() => {
     getProductArray();
-  },[])
- 
-  
-  
+  }, [getProductArray]);
 
-  const styles = {
-    overlay: {
-      left: 0,
-      width: "99.1vw",
-      height: "100vh",
-      backdropFilter: "blur(10px)", // Blur level
-      zIndex: 1000,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      maxHeight: "100vh",
-      paddingBottom: "20px",
-      position: "relative",
-      top: "37vh",
-    },
+  const addItem = (item) => {
+    addtocart(item);
   };
-  const additem=(item)=>{
-    console.log(item)
-    addtocart(item)
-  }
-  
+
+  const getProductImage = (item) => {
+    if (Array.isArray(item?.imgurl) && item.imgurl.length > 0) {
+      return normalizeImageSrc(item.imgurl[0]);
+    }
+
+    return normalizeImageSrc(item?.imageURI);
+  };
+
+  const heroProduct = items[6] || items[0];
+
+  const categories = [
+    { icon: "memory", label: "Processors" },
+    { icon: "developer_board", label: "Graphics Cards" },
+    { icon: "monitor", label: "Displays" },
+    { icon: "keyboard", label: "Accessories" },
+  ];
+
+  const features = [
+    {
+      icon: "ac_unit",
+      title: "Thermal Efficiency",
+      description:
+        "Custom vapor chambers and liquid metal cooling systems designed to sustain peak performance under heavy load.",
+    },
+    {
+      icon: "bolt",
+      title: "Zero-Latency Interface",
+      description:
+        "Professional-grade responsiveness for carts, orders, and product discovery without slowing the shopping flow.",
+    },
+    {
+      icon: "grid_view",
+      title: "Curated Architecture",
+      description:
+        "A focused catalog experience built around premium products, clear details, and fast purchase paths.",
+    },
+  ];
 
   return (
-    <>
-      {/* Carousel Starts Here */}
-      <div
-        id="carouselExampleAutoplaying"
-        className="carousel slide"
-        data-bs-ride="carousel"
-        style={{ position: "absolute", overflowY: "hidden" }}
-      >
-        <div className="carousel-inner">
-          <div className="carousel-item active">
-            <img
-              src="images/img1.jpg"
-              className="d-block w-100"
-              alt="can't load"
-            />
+    <main className="home-page">
+      <section className="home-hero">
+        <div className="home-shell home-hero-grid">
+          <div className="home-hero-copy">
+            <span className="home-eyebrow">New Release</span>
+            <h1>Precision Engineered for the Modern Professional.</h1>
+            <p>
+              Discover high-performance gear for creative workflows, gaming,
+              productivity, and everyday power users.
+            </p>
+            <div className="home-actions">
+              <a className="home-btn home-btn-primary" href="#signature-series">
+                Shop Now
+              </a>
+              <a className="home-btn home-btn-secondary" href="#core-tech">
+                Learn More
+              </a>
+            </div>
           </div>
-          <div className="carousel-item">
+
+          <div className="home-hero-media">
             <img
-              src="images/img.jpg"
-              className="d-block w-100"
-              alt="can't load"
+              src={getProductImage(heroProduct)}
+              alt={heroProduct?.head || heroProduct?.title || "Vanguard Pro X-1 laptop"}
+              onError={imageFallback}
             />
+            <div className="home-tech-badge">
+              <span className="material-symbols-outlined">speed</span>
+              <div>
+                <small>Architecture</small>
+                <strong>4nm Process</strong>
+              </div>
+            </div>
           </div>
         </div>
-        <button
-          className="carousel-control-prev"
-          type="button"
-          data-bs-target="#carouselExampleAutoplaying"
-          data-bs-slide="prev"
-        >
-          <span
-            className="carousel-control-prev-icon"
-            aria-hidden="true"
-          ></span>
-          <span className="visually-hidden">Previous</span>
-        </button>
-        <button
-          className="carousel-control-next"
-          type="button"
-          data-bs-target="#carouselExampleAutoplaying"
-          data-bs-slide="next"
-        >
-          <span
-            className="carousel-control-next-icon"
-            aria-hidden="true"
-          ></span>
-          <span className="visually-hidden">Next</span>
-        </button>
-      </div>
-      {/* Carousel End Here */}        
-      <div className="container-fluid mt-5" style={styles.overlay}>
-        <div className="row justify-content-center">
-          {items.map((item, key) => (
-            <div
-              className="col-md-3 col-sm-6 mb-4 d-flex justify-content-center"
-              key={key}
-            >
-              <div
-                className="card"
-                style={{ width: "18rem", borderRadius: "30px" }}
-              >
-                <img
-                  src={item.imgurl[0]}
-                  onClick={()=>{Gotodetails(item)}}
-                  className="card-img-top"
-                  alt="Can't Load"
-                  height="200px"
-                  style={{ objectFit: "contain" }}
-                />
-                <div
-                  className="card-body"
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                  }}
-                >
-                  <h5 className="card-title">{item.head}</h5>
-                  <p className="card-text">{item.price}</p>
+      </section>
+
+      <section className="home-categories">
+        <div className="home-shell home-category-grid">
+          {categories.map((category) => (
+            <button className="home-category-card" type="button" key={category.label}>
+              <span className="material-symbols-outlined">{category.icon}</span>
+              <strong>{category.label}</strong>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="home-products" id="signature-series">
+        <div className="home-shell">
+          <div className="home-section-head">
+            <div>
+              <h2>Signature Series</h2>
+              <p>The vanguard of engineering excellence.</p>
+            </div>
+            <a href="#signature-series">View Collection</a>
+          </div>
+
+          {items.length > 0 ? (
+            <div className="home-product-grid">
+              {items.map((item, key) => (
+                <article className="home-product-card" key={item._id || key}>
                   <button
+                    className="home-product-image"
                     type="button"
-                    className="btn btn-dark"
-                    onClick={() => additem(item)}
+                    onClick={() => goToDetails(item)}
+                    aria-label={`View ${item.head || item.title || "product"} details`}
                   >
-                    Add to Cart
+                    <img style={{objectFit:"contain"}}
+                      src={getProductImage(item)}
+                      alt={item.head || item.title || "Product"}
+                      onError={imageFallback}
+                    />
                   </button>
-                </div>
+                  <div className="home-product-info">
+                    <h3>{item.head || item.title}</h3>
+                    <p>{item.title || "High-performance hardware, selected for serious everyday use."}</p>
+                    <div className="home-product-bottom">
+                      <span>{item.price}</span>
+                      <button type="button" onClick={() => addItem(item)}>
+                        Add to Cart
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="home-empty-products">
+              <span className="material-symbols-outlined">inventory_2</span>
+              <p>No products available right now.</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="home-tech" id="core-tech">
+        <div className="home-shell home-tech-grid">
+          {features.map((feature) => (
+            <div className="home-tech-item" key={feature.title}>
+              <div className="home-tech-icon">
+                <span className="material-symbols-outlined">{feature.icon}</span>
               </div>
+              <h4>{feature.title}</h4>
+              <p>{feature.description}</p>
             </div>
           ))}
         </div>
-      </div>
-    </>
+      </section>
+
+      <section className="home-cta">
+        <div className="home-shell">
+          <h2>Build your studio with precision.</h2>
+          <form className="home-subscribe">
+            <input type="email" placeholder="Enter your email" />
+            <button type="submit">Subscribe</button>
+          </form>
+        </div>
+      </section>
+
+      <footer className="home-footer">
+        <div className="home-shell home-footer-grid">
+          <div>
+            <h3>Neon Gear</h3>
+            <p>
+              Precision engineered hardware for creators, engineers, and digital
+              architects.
+            </p>
+          </div>
+          <div>
+            <span>Products</span>
+            <a href="#signature-series">Processors</a>
+            <a href="#signature-series">Graphics Cards</a>
+            <a href="#signature-series">Laptops</a>
+          </div>
+          <div>
+            <span>Support</span>
+            <a href="/contact">Documentation</a>
+            <a href="/contact">Shipping Info</a>
+            <a href="/contact">Return Policy</a>
+          </div>
+          <div>
+            <span>Legal</span>
+            <a href="#signature-series">Privacy</a>
+            <a href="#signature-series">Terms of Service</a>
+            <a href="#signature-series">Compliance</a>
+          </div>
+        </div>
+        <div className="home-shell home-footer-bottom">
+          <p>Copyright 2026 Neon Gear. Precision Engineered.</p>
+          <div>
+            <span className="material-symbols-outlined">public</span>
+            <span className="material-symbols-outlined">share</span>
+          </div>
+        </div>
+      </footer>
+    </main>
   );
 }
+
 export default Home;

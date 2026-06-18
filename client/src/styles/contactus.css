@@ -1,0 +1,563 @@
+/* ============================================================
+   CONTACT US PAGE - GAMEGEARS DESIGN (Google Stitch)
+   Premium Contact Experience
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Sora:wght@500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+
+:root {
+    /* Color Palette - Google Stitch Design */
+    --surface-container-low: #f4f4f2;
+    --error-container: #ffdad6;
+    --tertiary-fixed-dim: #c5c6c8;
+    --inverse-on-surface: #f1f1ef;
+    --tertiary-container: #3e4042;
+    --surface-variant: #e2e3e1;
+    --surface-container-high: #e8e8e6;
+    --surface-container-lowest: #ffffff;
+    --on-tertiary: #ffffff;
+    --on-primary-fixed: #0d1c2f;
+    --secondary-fixed: #dce2f7;
+    --on-surface-variant: #44474c;
+    --outline: #75777d;
+    --inverse-surface: #2f3130;
+    --on-secondary: #ffffff;
+    --on-secondary-container: #5c6274;
+    --tertiary: #282a2c;
+    --surface-container-highest: #e2e3e1;
+    --on-primary-container: #9eadc5;
+    --error: #ba1a1a;
+    --secondary-container: #d9dff5;
+    --background: #f9f9f7;
+    --surface-dim: #dadad8;
+    --on-secondary-fixed: #141b2b;
+    --surface-container: #eeeeec;
+    --on-error: #ffffff;
+    --primary: #1d2b3e;
+    --on-primary: #ffffff;
+    --primary-container: #334155;
+    --secondary-fixed-dim: #c0c6db;
+    --secondary: #575e70;
+    --surface: #f9f9f7;
+    --tertiary-fixed: #e1e2e4;
+    --on-error-container: #93000a;
+    --on-tertiary-container: #aaacae;
+    --on-tertiary-fixed: #191c1e;
+    --on-surface: #1a1c1b;
+    --outline-variant: #c5c6cd;
+    --primary-fixed: #d5e3fd;
+    --inverse-primary: #b9c7e0;
+    --primary-fixed-dim: #b9c7e0;
+    --surface-tint: #515f74;
+    --surface-bright: #f9f9f7;
+    --on-background: #1a1c1b;
+    --on-secondary-fixed-variant: #404758;
+
+    /* Typography */
+    --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-sora: 'Sora', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+    /* Spacing */
+    --spacing-2: 8px;
+    --spacing-3: 12px;
+    --spacing-4: 16px;
+    --spacing-6: 24px;
+    --spacing-8: 32px;
+    --spacing-10: 40px;
+    --spacing-12: 48px;
+    --spacing-16: 64px;
+}
+
+.material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    min-height: 100vh;
+}
+
+body {
+    background-color: var(--surface);
+    color: var(--on-surface);
+    font-family: var(--font-inter);
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1.6;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================
+   MAIN CONTAINER
+   ============================================================ */
+
+.contactus-container {
+    min-height: 100vh;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+}
+
+.contactus-background {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: linear-gradient(135deg, rgba(244, 244, 242, 0.5) 0%, rgba(232, 232, 230, 0.3) 100%);
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+/* ============================================================
+   CONTENT SECTION
+   ============================================================ */
+
+.contactus-content {
+    width: 100%;
+    max-width: 1280px;
+    z-index: 10;
+    position: relative;
+}
+
+/* ============================================================
+   HEADER SECTION
+   ============================================================ */
+
+.contactus-header {
+    margin-bottom: 48px;
+    max-width: 600px;
+    animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.contactus-title {
+    font-family: var(--font-sora);
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    color: var(--primary);
+    margin-bottom: 16px;
+}
+
+.contactus-subtitle {
+    font-family: var(--font-inter);
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 1.6;
+    color: var(--on-surface-variant);
+}
+
+/* ============================================================
+   GRID LAYOUT
+   ============================================================ */
+
+.contactus-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
+}
+
+/* ============================================================
+   FORM SECTION
+   ============================================================ */
+
+.form-section {
+    background-color: var(--surface-container-lowest);
+    padding: 32px;
+    border: 1px solid var(--outline-variant);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    border-radius: 8px;
+    animation: fadeIn 0.6s ease-out 0.1s both;
+}
+
+.contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-label {
+    font-family: var(--font-inter);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.05em;
+    color: var(--on-surface-variant);
+    text-transform: uppercase;
+    margin-left: 4px;
+    transition: color 0.3s ease;
+}
+
+.form-input,
+.form-textarea {
+    width: 100%;
+    background-color: var(--surface);
+    border: 1px solid var(--outline-variant);
+    border-radius: 8px;
+    padding: 16px;
+    font-family: var(--font-inter);
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1.6;
+    color: var(--on-surface);
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+    color: var(--outline);
+}
+
+.form-input:focus,
+.form-textarea:focus {
+    outline: none;
+    border-color: var(--primary-container);
+    box-shadow: inset 0 0 0 1px var(--primary-container);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 200px;
+    font-family: var(--font-inter);
+}
+
+/* Custom scrollbar for textarea */
+.form-textarea::-webkit-scrollbar {
+    width: 4px;
+}
+
+.form-textarea::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.form-textarea::-webkit-scrollbar-thumb {
+    background: #e5e7eb;
+    border-radius: 10px;
+}
+
+.form-textarea::-webkit-scrollbar-thumb:hover {
+    background: #d1d5db;
+}
+
+/* ============================================================
+   SUBMIT BUTTON
+   ============================================================ */
+
+.submit-btn {
+    height: 56px;
+    background-color: var(--primary-container);
+    color: var(--on-primary);
+    border: none;
+    border-radius: 8px;
+    font-family: var(--font-inter);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px 48px;
+}
+
+.submit-btn:hover:not(:disabled) {
+    opacity: 0.9;
+    box-shadow: 0 8px 20px rgba(51, 65, 85, 0.25);
+}
+
+.submit-btn:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+.submit-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.submit-btn .material-symbols-outlined {
+    font-size: 18px;
+    transition: transform 0.3s ease;
+}
+
+.submit-btn:hover:not(:disabled) .material-symbols-outlined {
+    transform: translateX(4px);
+}
+
+/* ============================================================
+   INFO CARDS SECTION
+   ============================================================ */
+
+.cards-section {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.info-card {
+    background-color: var(--surface-container);
+    padding: 32px;
+    border: 1px solid var(--outline-variant);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    animation: fadeIn 0.6s ease-out 0.2s both;
+}
+
+.info-card:hover {
+    border-color: var(--primary);
+}
+
+.card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.card-icon {
+    width: 48px;
+    height: 48px;
+    background-color: var(--primary-fixed);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+    font-size: 24px;
+}
+
+.card-icon-secondary {
+    background-color: var(--secondary-container);
+    color: var(--secondary);
+}
+
+.status-badge {
+    font-family: var(--font-inter);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.05em;
+    color: var(--primary);
+    background-color: rgba(213, 227, 253, 0.5);
+    padding: 8px 12px;
+    border-radius: 20px;
+    text-transform: uppercase;
+}
+
+.card-title {
+    font-family: var(--font-sora);
+    font-size: 24px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: var(--primary);
+    margin-bottom: 16px;
+}
+
+.card-description {
+    font-family: var(--font-inter);
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1.6;
+    color: var(--on-surface-variant);
+    margin-bottom: 24px;
+}
+
+.card-link {
+    font-family: var(--font-inter);
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    color: var(--primary);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 4px;
+}
+
+.card-link:hover {
+    text-decoration: underline;
+}
+
+.card-link .material-symbols-outlined {
+    font-size: 16px;
+    transition: transform 0.3s ease;
+}
+
+.card-link:hover .material-symbols-outlined {
+    transform: translateX(4px);
+}
+
+/* ============================================================
+   RESPONSIVE DESIGN
+   ============================================================ */
+
+@media (max-width: 1024px) {
+    .contactus-grid {
+        grid-template-columns: 1fr;
+        gap: 32px;
+    }
+
+    .contactus-title {
+        font-size: 28px;
+    }
+
+    .contactus-subtitle {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .contactus-container {
+        padding: 24px 16px;
+    }
+
+    .contactus-header {
+        margin-bottom: 32px;
+    }
+
+    .form-section {
+        padding: 24px;
+    }
+
+    .contact-form {
+        gap: 24px;
+    }
+
+    .contactus-title {
+        font-size: 24px;
+    }
+
+    .contactus-subtitle {
+        font-size: 14px;
+    }
+
+    .form-input,
+    .form-textarea {
+        padding: 12px 14px;
+        font-size: 16px;
+    }
+
+    .form-textarea {
+        min-height: 160px;
+    }
+
+    .submit-btn {
+        height: 50px;
+        font-size: 13px;
+        padding: 12px 24px;
+    }
+}
+
+@media (max-width: 480px) {
+    .contactus-container {
+        padding: 16px 12px;
+    }
+
+    .contactus-header {
+        margin-bottom: 24px;
+    }
+
+    .contactus-title {
+        font-size: 20px;
+        margin-bottom: 12px;
+    }
+
+    .contactus-subtitle {
+        font-size: 13px;
+    }
+
+    .form-section,
+    .info-card {
+        padding: 20px;
+        border-radius: 8px;
+    }
+
+    .contact-form {
+        gap: 20px;
+    }
+
+    .card-header {
+        margin-bottom: 16px;
+    }
+
+    .card-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+    }
+
+    .card-title {
+        font-size: 20px;
+    }
+
+    .card-description {
+        font-size: 14px;
+        margin-bottom: 16px;
+    }
+
+    .form-input,
+    .form-textarea {
+        padding: 10px 12px;
+        font-size: 15px;
+    }
+
+    .form-textarea {
+        min-height: 140px;
+    }
+
+    .submit-btn {
+        height: 48px;
+        font-size: 12px;
+        padding: 10px 16px;
+        width: 100%;
+    }
+
+    .submit-btn .material-symbols-outlined {
+        font-size: 16px;
+    }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

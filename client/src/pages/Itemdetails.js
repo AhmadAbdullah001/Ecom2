@@ -1,152 +1,289 @@
-import React, { useState, useContext, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useContext, useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import itemContext from "../context/Context";
-import { useLocation } from "react-router-dom";
+import { imageFallback, normalizeImageSrc } from "../utils/images";
+import "../styles/itemdetails.css";
 
 function Itemdetails(props) {
-  const context = useContext(itemContext);
-  const { addtocart, addreview, getreview } = context;
+  const { addtocart, addreview, getreview } = useContext(itemContext);
   const nav = useNavigate();
-  let loc = useLocation();
-  const current = loc.state;
-  const uid = loc.state._id;
+  const loc = useLocation();
+  const current = loc.state || null;
+  const uid = current?._id;
 
-  // Initialize reviews as an empty array
+  const images = useMemo(() => {
+    if (Array.isArray(current?.imgurl) && current.imgurl.length > 0) {
+      return current.imgurl;
+    }
+
+    if (current?.imageURI) {
+      return [current.imageURI];
+    }
+
+    return [];
+  }, [current]);
+
+  const [url, setUrl] = useState(normalizeImageSrc(images[0]));
   const [reviews, setReviews] = useState([]);
+  const [review, setReview] = useState({ comment: "" });
 
-  // Fetch reviews on component mount
   useEffect(() => {
+    if (!current) {
+      props.showalert("Product details unavailable", "warning");
+      nav("/");
+    }
+  }, [current, nav, props]);
+
+  useEffect(() => {
+    setUrl(normalizeImageSrc(images[0]));
+  }, [images]);
+
+  useEffect(() => {
+    if (!uid) return;
+
     const fetchReviews = async () => {
-      const fetchedReviews = await getreview(uid); // Assuming getreview returns reviews from the backend
-      setReviews(fetchedReviews || []); // Set to empty array if undefined
+      const fetchedReviews = await getreview(uid);
+      setReviews(Array.isArray(fetchedReviews) ? fetchedReviews : []);
     };
+
     fetchReviews();
-  }, [uid, getreview]); // Only re-run the effect when `uid` changes
+  }, [uid, getreview]);
+
+  if (!current) {
+    return null;
+  }
 
   const {
-    imgurl = [],
+    head,
     title,
     price,
     detail = [],
     productDetails,
     productdetails,
-  } = loc.state;  
-  const productInfo = productDetails || productdetails || {};
-  const [url, seturl] = useState(imgurl[0]);
+  } = current;
 
-  const changeurl = (img) => {
-    seturl(img);
+  const productTitle = head || title || "Neon Gear Product";
+  const productDescription =
+    title ||
+    "Precision engineering meets premium materials for high-performance everyday use.";
+  const productInfo = productDetails || productdetails || {};
+  const material = productInfo.Material || productInfo.material || "Not specified";
+  const country = productInfo.Country || productInfo.country || "Not specified";
+
+  const featureIcons = ["location_on", "mic", "fitness_center", "battery_charging_full"];
+  const aboutItems =
+    detail.length > 0
+      ? detail.slice(0, 4)
+      : [
+          "Precision-tuned performance for everyday workflows.",
+          "Premium materials with a refined industrial finish.",
+          "Reliable battery and durable hardware construction.",
+          "Designed for a clean, professional setup.",
+        ];
+
+  const changeUrl = (img) => {
+    setUrl(normalizeImageSrc(img));
   };
 
-  const BuyPage = () => {
-    if(!localStorage.getItem('token'))
-      props.showalert("Login Required","danger")
-    else
+  const buyPage = () => {
+    if (!localStorage.getItem("token")) {
+      props.showalert("Login Required", "danger");
+      return;
+    }
+
     nav("/buypage", { state: { current } });
   };
 
-  const [review, setreview] = useState({ comment: "", name: "", uid: "" });
-  
-  const handlechange = (e) => {
-    setreview({ ...review, comment: e.target.value, name: localStorage.getItem("Current"), uid: uid });
-  };
+  const submitReview = async () => {
+    if (!review.comment.trim()) {
+      props.showalert("Write a review first", "warning");
+      return;
+    }
 
-  const Submit = () => {
-    addreview(review); // Assuming addreview sends review to backend
+    const newReview = {
+      uid,
+      Name: localStorage.getItem("Current") || "Guest",
+      comment: review.comment.trim(),
+    };
+
+    const savedReview = await addreview(newReview);
+    if (savedReview && !savedReview.error) {
+      setReviews((prev) => [savedReview, ...prev]);
+      setReview({ comment: "" });
+      props.showalert("Review submitted", "success");
+    }
   };
 
   return (
-    <>
-      <div className="mx-3 my-3" style={{ display: "flex" }}>
-        <div
-          className="Vertical-image-selector ="
-          style={{ width: "100px", display: "flex", flexDirection: "column" }}
-        >
-          {imgurl.map((img, key) => (
+    <main className="item-page">
+      <section className="item-shell item-hero-grid">
+        <div className="item-gallery">
+          <div className="item-main-image">
             <img
-              className="border"
-              key={key}
-              src={img}
-              alt={`${title} thumbnail ${key + 1}`}
-              onMouseEnter={() => {
-                changeurl(img);
-              }}
-              style={{ height: "105px", objectFit: "contain", margin: "5px" }}
+              src={url}
+              alt={productTitle}
+              onError={imageFallback}
             />
-          ))}
+          </div>
+
+          <div className="item-thumbnails">
+            {(images.length > 0 ? images : [url]).map((img, key) => {
+              const thumbSrc = normalizeImageSrc(img);
+              return (
+                <button
+                  className={`item-thumb ${thumbSrc === url ? "active" : ""}`}
+                  key={`${thumbSrc}-${key}`}
+                  type="button"
+                  onClick={() => changeUrl(img)}
+                >
+                  <img
+                    src={thumbSrc}
+                    alt={`${productTitle} view ${key + 1}`}
+                    onError={imageFallback}
+                  />
+                </button>
+              );
+            })}
+          </div>
         </div>
-        <div className="imagebox  mx-3 my-3">
-          <img
-            src={url}
-            alt={title}
-            style={{ objectFit: "contain", height: "70vh", width: "40vw" }}
-          />
-        </div>
-        <div className="details mx-5" style={{ width: "40vw" }}>
-          <h2 className="my-3">{title}</h2>
-          <hr />
-          <h4>Product Details</h4>
-          <ul>
-            <li>
-              <b>Material </b>:<span> {productInfo.Material || productInfo.material}</span>
-            </li>
-            <li>
-              <b>Country of Origin </b>:<span> {productInfo.Country || productInfo.country}</span>
-            </li>
-          </ul>
-          <hr />
-          <h4>About the item</h4>
-          <ul>
-            {detail.map((item, key) => (
-              <li key={key}>{item}</li>
-            ))}
-          </ul>
-          <hr />
-          <h4 className="my-3"> {price}</h4>
-          <div className="btns">
-            <button
-              className="btn btn-success"
-              onClick={() => {
-                addtocart({ imgurl, title, price });
-              }}
-            >
+
+        <aside className="item-info-panel">
+          <div>
+            <div className="item-rating-row">
+              <span className="item-badge">New Arrival</span>
+              <div className="item-stars">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <span className="material-symbols-outlined" key={star}>
+                    star
+                  </span>
+                ))}
+                <small>({reviews.length || 0} Reviews)</small>
+              </div>
+            </div>
+            <h1>{productTitle}</h1>
+            <p>{productDescription}</p>
+          </div>
+
+          <div className="item-price-block">
+            <span>Pricing</span>
+            <strong>{price}</strong>
+          </div>
+
+          <div className="item-actions">
+            <button type="button" onClick={buyPage}>
+              Buy Now
+            </button>
+            <button type="button" onClick={() => addtocart(current)}>
               Add to Cart
             </button>
-            <button className="btn btn-warning mx-3" onClick={() => BuyPage()}>
-              Buy now
-            </button>
           </div>
-          <div className="review_box" style={{ width: "30vw", height: "18vh", marginTop: "2vh" }}>
-            <h3 style={{ marginBottom: "10px", marginTop: "10px" }}>Write a review</h3>
-            <textarea
-              name="paragraph_text"
-              cols="70"
-              rows="2"
-              placeholder="Write your Review"
-              onChange={handlechange}
-            />
-            <button className="btn btn-success" style={{ position: "relative", left: "24.5vw", top: "10px" }} onClick={Submit}>
-              Submit
-            </button>
+
+          <div className="item-product-details">
+            <h3>Product Details</h3>
+            <ul>
+              <li>
+                <span></span>
+                <strong>Material:</strong> {material}
+              </li>
+              <li>
+                <span></span>
+                <strong>Country of Origin:</strong> {country}
+              </li>
+            </ul>
           </div>
-          <h3>Product reviews</h3>
-          {/* Ensure reviews are an array before mapping */}
-          {reviews.length > 0 ? (
-            reviews.map((reviewItem, index) => (
-              <div className="" key={index} style={{ height: "max-content", width: "30vw", margin:"10px" }}>
-                <div className="border" style={{ height: "max-content", wordWrap: "break-word", overflowWrap: "break-word", whiteSpace: "normal",padding:"10px" }}>
-                  <span><b>Review by : </b></span>
-                  <span style={{ color: "grey" }}>{reviewItem.Name}</span>
-                  <p>{reviewItem.comment}</p>
+        </aside>
+      </section>
+
+      <section className="item-shell item-detail-grid">
+        <div className="item-card">
+          <h2>About the Item</h2>
+          <div className="item-feature-grid">
+            {aboutItems.map((item, index) => (
+              <div className="item-feature" key={`${item}-${index}`}>
+                <div>
+                  <span className="material-symbols-outlined">
+                    {featureIcons[index] || "check_circle"}
+                  </span>
                 </div>
+                <p>{item}</p>
               </div>
-            ))
-          ) : (
-            <p>No reviews yet.</p> // Display a message if no reviews
-          )}
+            ))}
+          </div>
         </div>
-      </div>
-    </>
+
+        <div className="item-review-form">
+          <h2>Write a review</h2>
+          <div className="item-form-stars">
+            {[1, 2, 3, 4].map((star) => (
+              <span className="material-symbols-outlined" key={star}>
+                star
+              </span>
+            ))}
+            <span className="material-symbols-outlined muted">star</span>
+          </div>
+          <textarea
+            placeholder={`Share your experience with ${productTitle}...`}
+            rows="4"
+            value={review.comment}
+            onChange={(event) => setReview({ comment: event.target.value })}
+          />
+          <button type="button" onClick={submitReview}>
+            Submit Review
+          </button>
+        </div>
+      </section>
+
+      <section className="item-shell item-reviews-section">
+        <div className="item-reviews-head">
+          <h2>Product Reviews</h2>
+          <button type="button">
+            View All
+            <span className="material-symbols-outlined">arrow_forward</span>
+          </button>
+        </div>
+
+        {reviews.length > 0 ? (
+          <div className="item-review-grid">
+            {reviews.map((reviewItem, index) => (
+              <article className="item-review-card" key={reviewItem._id || index}>
+                <div className="item-review-card-head">
+                  <div>
+                    <strong>{reviewItem.Name || "Neon Gear User"}</strong>
+                    <div className="item-stars">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <span className="material-symbols-outlined" key={star}>
+                          star
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <span>Recent</span>
+                </div>
+                <p>"{reviewItem.comment}"</p>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="item-empty-reviews">
+            <span className="material-symbols-outlined">rate_review</span>
+            <p>No reviews yet.</p>
+          </div>
+        )}
+      </section>
+
+      <footer className="item-footer">
+        <div className="item-shell item-footer-inner">
+          <span>Neon Studio</span>
+          <div>
+            <a href="/contact">Privacy</a>
+            <a href="/contact">Terms</a>
+            <a href="/contact">Shipment</a>
+            <a href="/contact">Support</a>
+          </div>
+          <p>Copyright 2026 NEON STUDIO. All rights reserved.</p>
+        </div>
+      </footer>
+    </main>
   );
 }
 

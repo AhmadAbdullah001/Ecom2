@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { API_HOST } from "../config";
+import { imageFallback, normalizeImageSrc } from "../utils/images";
 
 function Orders() {
   const [items, setItems] = useState([]);
@@ -41,9 +42,10 @@ function Orders() {
                 style={{ borderRadius: "10px" }}
               >
                 <img
-                  src={item.imageURI}
+                  src={normalizeImageSrc(item.imageURI)}
                   className="card-img-top p-3"
                   alt="Item"
+                  onError={imageFallback}
                   style={{
                     height: "300px",
                     objectFit: "contain",
