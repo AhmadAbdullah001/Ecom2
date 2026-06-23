@@ -33,7 +33,7 @@ function Signup(props) {
     let address = "";
     const fetchAddress = async (lat, long) => {
       try {
-        const apiKey = "2643c1f335254c2284b6cec4f81d22ea";
+        const apiKey = "c8e92377fa1b473c8d917eca49aa6198";
         const apiEndpoint = `https://api.opencagedata.com/geocode/v1/json?key=${apiKey}&q=${lat}%2C${long}&pretty=1`;
         const locRes = await fetch(apiEndpoint);
         const data = await locRes.json();

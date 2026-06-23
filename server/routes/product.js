@@ -1,27 +1,132 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const product = require('../models/ProductSchema');
-router.post('/addproduct',async(req,res)=>{
-    const{imgurl,head,title,price,detail,productdetails}=req.body
-    const newproduct=new product({
-        imgurl,head,title,price,detail,productdetails
-})
-    try {
+const product = require("../models/ProductSchema");
+const Category = require("../models/CategorySchema");
+const streamifier = require("streamifier");
+const upload = require("../middleware/multer");
+const cloudinary = require("../config/cloudinary");
 
-        await newproduct.save();
-        res.json("Product Added to DataBase")
-    } catch (error) {
-        // res.status(404).json({error})
-        res.json(req.body)
+const uploadToCloudinary = (file) =>
+  new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error("Cloudinary upload timed out"));
+    }, 30000);
+
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: "products",
+      },
+      (error, result) => {
+        clearTimeout(timeout);
+        if (error) reject(error);
+        else resolve(result);
+      },
+    );
+
+    stream.on("error", (error) => {
+      clearTimeout(timeout);
+      reject(error);
+    });
+
+    streamifier.createReadStream(file.buffer).pipe(stream);
+  });
+
+router.post("/addproduct", upload.array("images", 6), async (req, res) => {
+  try {
+    const { head, title, price, categoryId } = req.body;
+      
+    if (!categoryId) {
+      return res.status(400).json({ error: "Category ID is required" });
     }
-})
-router.get('/fetchproducts',async(req,res)=>{
+    
+    const category = await Category.findById(categoryId);
+    if (!category) {
+      return res.status(404).json({ error: "Category not found" });
+    }    
+    
+    // Safe JSON parsing
+    let detail = [];
     try {
-        const list=await product.find()
-        res.json(list)
-    } catch (error) {
-        console.error(error.message)
-        res.status(500).json({ error: "Internal Server Error" })
+      detail = typeof req.body.detail === 'string' 
+        ? JSON.parse(req.body.detail) 
+        : (Array.isArray(req.body.detail) ? req.body.detail : []);
+    } catch (e) {
+      detail = [];
     }
-})
-module.exports=router
+    
+    let productDetails = {};
+    try {
+      productDetails = typeof req.body.productDetails === 'string'
+        ? JSON.parse(req.body.productDetails)
+        : (typeof req.body.productDetails === 'object' ? req.body.productDetails : {});
+    } catch (e) {
+      productDetails = {};
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: "At least one product image is required" });
+    }
+
+    const uploadResults = await Promise.all(req.files.map(uploadToCloudinary));
+    const imgurl = uploadResults.map((result) => result.secure_url);
+    
+    const newproduct = new product({
+      category: categoryId,
+      categoryName: category.name,
+      imgurl,
+      head,
+      title,
+      price,
+      detail,
+      productDetails: {
+        Material: productDetails.Material || "",
+        Country: productDetails.Country || "",
+      },
+    });
+    
+    const savedProduct = await newproduct.save();
+    const verifiedProduct = await product.findById(savedProduct._id);
+
+    res.status(201).json({
+      message: "Product added successfully",
+      productId: savedProduct._id.toString(),
+      verifiedInDb: !!verifiedProduct,
+      product: savedProduct,
+    });
+  } catch (error) {
+    console.error("Error adding product:", error.message);
+    res.status(500).json({
+      error: error.message || "Internal Server Error",
+    });
+  }
+});
+router.get("/fetchproducts", async (req, res) => {
+  try {
+    const list = await product.find();
+    res.json(list);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+router.get("/fetchhomeproducts", async (req, res) => {
+  try {
+    const list = await product.find();
+    res.json(list);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.get("/fetchproductsbycategory/:categoryId", async (req, res) => {
+  try {
+    const list = await product.find({ category: req.params.categoryId }).populate('category');
+    res.json(list);
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+module.exports = router;

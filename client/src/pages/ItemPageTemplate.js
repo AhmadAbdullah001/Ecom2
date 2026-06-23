@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function ItemPageTemplate({
   headerBadge = '',
@@ -8,6 +9,14 @@ export default function ItemPageTemplate({
   products = [],
   promo = null,
 }) {
+  const navigate = useNavigate();
+
+  const goToDetails = (product) => {
+    if (product?.rawProduct) {
+      navigate('/itemdetails', { state: product.rawProduct });
+    }
+  };
+
   return (
     <main className="pt-24 pb-32">
       <section className="px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto mb-16">
@@ -60,16 +69,26 @@ export default function ItemPageTemplate({
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-gutter">
             {products.map((p, idx) => (
               <div className="group" key={idx}>
-                <div className="relative aspect-square bg-surface-container-low rounded-xl overflow-hidden mb-4 border border-outline-variant transition-all duration-300 group-hover:border-primary/50 group-hover:shadow-lg">
+                <button
+                  className="relative aspect-square bg-surface-container-low rounded-xl overflow-hidden mb-4 border border-outline-variant transition-all duration-300 group-hover:border-primary/50 group-hover:shadow-lg w-full cursor-pointer"
+                  type="button"
+                  onClick={() => goToDetails(p)}
+                  aria-label={`View ${p.title || 'product'} details`}
+                >
                   <img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" src={p.image} alt={p.title} />
                   {p.badge && <div className="absolute top-4 left-4 px-3 py-1 bg-primary text-on-primary text-[10px] font-bold tracking-widest uppercase rounded">{p.badge}</div>}
-                </div>
+                </button>
                 <div className="flex justify-between items-start">
-                  <div>
+                  <button
+                    className="text-left"
+                    type="button"
+                    onClick={() => goToDetails(p)}
+                    aria-label={`View ${p.title || 'product'} details`}
+                  >
                     <h3 className="font-headline-md text-headline-md text-dark mb-1">{p.title}</h3>
                     {p.subtitle && <p className="text-label-sm font-label-sm text-secondary uppercase tracking-wider mb-2">{p.subtitle}</p>}
                     <span className="text-body-lg font-body-lg text-dark font-semibold">{p.price}</span>
-                  </div>
+                  </button>
                   <button className="w-10 h-10 flex items-center justify-center rounded-full border border-outline-variant hover:bg-primary hover:text-on-primary transition-all">
                     <span className="material-symbols-outlined text-[20px]">add_shopping_cart</span>
                   </button>

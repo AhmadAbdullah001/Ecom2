@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import itemContext from "../context/Context";
 import { API_HOST } from "../config";
-import { imageFallback, normalizeImageSrc } from "../utils/images";
+import { normalizeImageSrc } from "../utils/images";
 import "../styles/profile.css";
 
 function Profile(props) {
@@ -167,7 +167,6 @@ function Profile(props) {
                         <img
                           src={normalizeImageSrc(order.imageURI)}
                           alt={order.title || "Ordered item"}
-                          onError={imageFallback}
                         />
                       </div>
                       <div>

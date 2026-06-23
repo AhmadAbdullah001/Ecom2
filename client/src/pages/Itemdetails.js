@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import itemContext from "../context/Context";
-import { imageFallback, normalizeImageSrc } from "../utils/images";
+import { normalizeImageSrc } from "../utils/images";
 import "../styles/itemdetails.css";
 
 function Itemdetails(props) {
@@ -122,7 +122,6 @@ function Itemdetails(props) {
             <img
               src={url}
               alt={productTitle}
-              onError={imageFallback}
             />
           </div>
 
@@ -139,7 +138,6 @@ function Itemdetails(props) {
                   <img
                     src={thumbSrc}
                     alt={`${productTitle} view ${key + 1}`}
-                    onError={imageFallback}
                   />
                 </button>
               );

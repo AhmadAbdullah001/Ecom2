@@ -85,6 +85,7 @@ function Navbar() {
           <Link to="/contact" className={`nav-link ${loc.pathname === "/contact" ? "active" : ""}`}>
             Support
           </Link>
+
         </div>
 
         <div className="navbar-auth-desktop">

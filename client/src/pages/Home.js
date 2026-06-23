@@ -1,13 +1,14 @@
 import React, { useCallback, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import itemContext from "../context/Context";
-import { imageFallback, normalizeImageSrc } from "../utils/images";
+import { normalizeImageSrc } from "../utils/images";
+import { normalizeCategoryName, productMatchesCategory } from "../utils/categories";
 import "../styles/home.css";
 
 function Home(props) {
   const nav = useNavigate();
   const context = useContext(itemContext);
-  const { addtocart, fetchproducts } = context;
+  const { addtocart, fetchproducts, getCategories } = context;
   const [items, setItems] = useState([]);
 
   const goToDetails = (item) => {
@@ -15,9 +16,18 @@ function Home(props) {
   };
 
   const getProductArray = useCallback(async () => {
-    const temp = await fetchproducts();
-    setItems(Array.isArray(temp) ? temp.filter(Boolean) : []);
-  }, [fetchproducts]);
+    const [temp, categories] = await Promise.all([fetchproducts(), getCategories()]);
+    const matchedHomeCategory = Array.isArray(categories)
+      ? categories.find((cat) => normalizeCategoryName(cat.name) === "home")
+      : null;
+    const productArray = Array.isArray(temp) ? temp.filter(Boolean) : [];
+
+    setItems(
+      productArray.filter((product) =>
+        productMatchesCategory(product, "home", matchedHomeCategory)
+      )
+    );
+  }, [fetchproducts, getCategories]);
 
   useEffect(() => {
     getProductArray();
@@ -86,11 +96,12 @@ function Home(props) {
             </div>
           </div>
 
-          <div className="home-hero-media">
+          <div className="home-hero-media" style={{backgroundColor:"white"}}>
             <img
               src={getProductImage(heroProduct)}
+              style={{ objectFit: "contain",backgroundColor:"transparent" }}
+              
               alt={heroProduct?.head || heroProduct?.title || "Vanguard Pro X-1 laptop"}
-              onError={imageFallback}
             />
             <div className="home-tech-badge">
               <span className="material-symbols-outlined">speed</span>
@@ -137,7 +148,6 @@ function Home(props) {
                     <img style={{objectFit:"contain"}}
                       src={getProductImage(item)}
                       alt={item.head || item.title || "Product"}
-                      onError={imageFallback}
                     />
                   </button>
                   <div className="home-product-info">

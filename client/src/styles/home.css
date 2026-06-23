@@ -137,6 +137,7 @@
   position: relative;
   aspect-ratio: 1.59 / 1;
   overflow: visible;
+  
 }
 
 .home-hero-media > img {
@@ -145,7 +146,6 @@
   object-fit: cover;
   border: 1px solid var(--home-outline-soft);
   border-radius: 8px;
-  background: var(--home-surface-low);
   transition: transform 0.35s ease;
 }
 

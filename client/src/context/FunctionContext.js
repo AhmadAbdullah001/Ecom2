@@ -2,6 +2,20 @@ import React from "react";
 import itemContext from "./Context";
 import { API_HOST } from "../config";
 
+const readJsonResponse = async (res, endpointName) => {
+  const contentType = res.headers.get("content-type") || "";
+
+  if (!contentType.includes("application/json")) {
+    const text = await res.text();
+    const preview = text.slice(0, 80).replace(/\s+/g, " ");
+    throw new Error(
+      `${endpointName} returned non-JSON response. Make sure the Express server is running on port 3002. Response: ${preview}`
+    );
+  }
+
+  return res.json();
+};
+
 function FunctionContext(props) {
 
   // Add to Cart
@@ -91,6 +105,37 @@ function FunctionContext(props) {
     }
   };
 
+  const addproduct = async (formData) => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 45000);
+
+    try {
+      const res = await fetch(`${API_HOST}/api/product/addproduct`, {
+        method: "POST",
+        body: formData,
+        signal: controller.signal,
+      });
+
+      const data = await readJsonResponse(res, "Add product");
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to add product");
+      }
+
+      return data;
+    } catch (err) {
+      console.error(err);
+      return {
+        error:
+          err.name === "AbortError"
+            ? "Upload timed out. Check your Cloudinary configuration/network and try smaller images."
+            : err.message,
+      };
+    } finally {
+      clearTimeout(timeout);
+    }
+  };
+
 
   // Add Review
   const addreview = async (item) => {
@@ -131,6 +176,150 @@ function FunctionContext(props) {
     }
   };
 
+  // Add Category with Image
+  const addCategory = async (formData) => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 45000);
+
+    try {
+      const res = await fetch(`${API_HOST}/api/category/addcategory`, {
+        method: "POST",
+        body: formData,
+        signal: controller.signal,
+      });
+
+      const data = await readJsonResponse(res, "Add category");
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to add category");
+      }
+
+      return data;
+    } catch (err) {
+      console.error(err);
+      return {
+        error:
+          err.name === "AbortError"
+            ? "Upload timed out. Check your Cloudinary configuration/network and try smaller images."
+            : err.message,
+      };
+    } finally {
+      clearTimeout(timeout);
+    }
+  };
+
+  // Get All Categories
+  const getCategories = async () => {
+    try {
+      const res = await fetch(`${API_HOST}/api/category/getcategories`);
+
+      const data = await readJsonResponse(res, "Get categories");
+
+      if (!res.ok) {
+        throw new Error(data.error || `Failed to fetch categories: ${res.status}`);
+      }
+
+      return data;
+
+    } catch (err) {
+      console.error(err);
+      return [];
+    }
+  };
+
+  // Get Single Category by ID
+  const getCategory = async (categoryId) => {
+    try {
+      const res = await fetch(`${API_HOST}/api/category/getcategory/${categoryId}`);
+
+      const data = await readJsonResponse(res, "Get category");
+
+      if (!res.ok) {
+        throw new Error(data.error || `Failed to fetch category: ${res.status}`);
+      }
+
+      return data;
+
+    } catch (err) {
+      console.error(err);
+      return null;
+    }
+  };
+
+  // Update User Address
+  const updateAddress = async (addressData) => {
+    try {
+      const res = await fetch(`${API_HOST}/api/auth/updateaddress`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "auth-token": localStorage.getItem("token"),
+        },
+        body: JSON.stringify(addressData),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update address");
+      }
+
+      return await res.json();
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  };
+
+  // Create Cashfree Payment Order
+  const createCashfreePaymentOrder = async (paymentData) => {
+    try {
+      const res = await fetch(`${API_HOST}/api/payment/create-order`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "auth-token": localStorage.getItem("token"),
+        },
+        body: JSON.stringify(paymentData),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to create payment order");
+      }
+
+      return data;
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  };
+
+  // Verify Cashfree Payment
+  const verifyCashfreePayment = async (orderId, paymentId) => {
+    try {
+      const res = await fetch(`${API_HOST}/api/payment/verify-payment`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "auth-token": localStorage.getItem("token"),
+        },
+        body: JSON.stringify({ orderId, paymentId }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to verify payment");
+      }
+
+      return data;
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  };
+
 
   return (
     <itemContext.Provider
@@ -138,8 +327,15 @@ function FunctionContext(props) {
         addtocart,
         fetchDetails,
         fetchproducts,
+        addproduct,
         addreview,
-        getreview
+        getreview,
+        addCategory,
+        getCategories,
+        getCategory,
+        updateAddress,
+        createCashfreePaymentOrder,
+        verifyCashfreePayment
       }}
     >
       {props.children}

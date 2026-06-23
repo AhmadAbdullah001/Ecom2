@@ -79,6 +79,31 @@ router.post("/getuser", fetchuser, async (req, res) => {
       res.status(500).send("Internal Server Error");
     }
   });
+
+  // Router 4 - Update User Address (Requires login)
+  router.post("/updateaddress", fetchuser, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { street, apartment, city, state, zipcode } = req.body;
+
+      if (!street || !city || !state || !zipcode) {
+        return res.status(400).json({ error: "All address fields are required" });
+      }
+
+      const address = `${street}${apartment ? ', ' + apartment : ''}, ${city}, ${state} ${zipcode}`;
+
+      const User = await user.findByIdAndUpdate(
+        userId,
+        { address },
+        { new: true }
+      ).select("-password");
+
+      res.json(User);
+    } catch (error) {
+      console.error(error.message);
+      res.status(500).send("Internal Server Error");
+    }
+  });
   
   // Export the router
   module.exports = router;

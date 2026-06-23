@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from "react-router-dom";
 import { API_HOST } from '../config';
-import { imageFallback, normalizeImageSrc } from '../utils/images';
+import { normalizeImageSrc } from '../utils/images';
 function Cart(props) {
   const nav=useNavigate()
   const [items, setItems] = useState([]);
@@ -62,7 +62,6 @@ function Cart(props) {
                   src={normalizeImageSrc(item.imageURI)} 
                   className="card-img-top p-3" 
                   alt="Item" 
-                  onError={imageFallback}
                   style={{ height: '300px', objectFit: 'contain', borderRadius: '10px' }}
                 />
                 <div className="card-body">

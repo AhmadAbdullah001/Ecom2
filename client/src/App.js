@@ -22,10 +22,11 @@ import Monitors from './pages/Monitors';
 import Keyboards from './pages/Keyboards';
 import Mice from './pages/Mice';
 import Headsets from './pages/Headsets';
+import AdminPanel from './pages/AdminPanel';
 
 function AppContent({ showAlert }) {
   const location = useLocation();
-  const hideNavbarRoutes = ['/login', '/signup'];
+  const hideNavbarRoutes = ['/login', '/signup', '/admin'];
   const shouldShowNavbar = !hideNavbarRoutes.includes(location.pathname);
 
   return (
@@ -53,6 +54,7 @@ function AppContent({ showAlert }) {
           <Route path='/profile' element={<Profile showalert={showAlert}/>} />
           <Route path='/login' element={<Login showalert={showAlert} />} />
           <Route path='/signup' element={<Signup showalert={showAlert} />} />
+          <Route path='/admin' element={<AdminPanel showalert={showAlert} />} />
         </Routes>
       </div>
     </>

@@ -7,7 +7,7 @@ router.post("/addorders", fetchuser, async (req, res) => {
 
   try {
 
-    const { imageURI, title, price, date } = req.body;
+    const { imageURI, title, price, date, paymentMethod, quantity } = req.body;
 
     // Validation
     if (!imageURI || !title || !price || !date) {
@@ -19,12 +19,20 @@ router.post("/addorders", fetchuser, async (req, res) => {
       return res.status(400).json({ error: "Invalid price" });
     }
 
+    // Generate unique orderId for COD orders
+    const orderId = `${req.user.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
     const item = new orders({
       imageURI,
       title,
       price,
       date,
       user: req.user.id,
+      userId: req.user.id,
+      orderId: orderId,
+      paymentMethod: paymentMethod || 'COD',
+      paymentStatus: paymentMethod === 'cashfree' ? 'pending' : 'completed',
+      quantity: quantity || 1
     });
 
     await item.save();
@@ -32,6 +40,7 @@ router.post("/addorders", fetchuser, async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Order Placed",
+      orderId: orderId,
       order: item
     });
 

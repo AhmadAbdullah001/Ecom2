@@ -1,162 +1,708 @@
-  import React, { useEffect,useContext, useState } from 'react'
-  import { useNavigate } from 'react-router-dom';
-  import itemContext from '../context/Context';
-  import { useLocation } from 'react-router-dom'
-  import { API_HOST } from '../config';
-  import { imageFallback, normalizeImageSrc } from '../utils/images';
-  function BuyPage(props) {
-    let loc= useLocation()
-    let nav=useNavigate()
-    const [currentuser, setCurrentUser] = useState({id:"",name:"",email:"",phone:"",address:""}); // State to hold the resolved data
-    const [qty,setqty]=useState(1);
-    const context=useContext(itemContext)
-    const {fetchDetails}=context
-    useEffect(() => {
-      const getDetails = async () => {
-        const userDetails = await fetchDetails(localStorage.getItem("token"));
-        setCurrentUser(userDetails); // Set the resolved data to state
-      };
-      
-      getDetails();
-    },[]); // Run this effect only when fetchDetails function changes
-    let currentitem=loc.state;
-    const[img,setimg]=useState();
-    useEffect(() => {
-      if (Array.isArray(currentitem.current.imgurl)) {
-          setimg(normalizeImageSrc(currentitem.current.imgurl[0]));
-        } else {
-          setimg(normalizeImageSrc(currentitem.current.imageURI));
+import React, { useEffect, useContext, useState } from 'react'
+import { useNavigate } from 'react-router-dom';
+import itemContext from '../context/Context';
+import { useLocation } from 'react-router-dom'
+import { API_HOST } from '../config';
+import { normalizeImageSrc } from '../utils/images';
+import '../styles/buypage.css';
+
+function BuyPage(props) {
+  let loc = useLocation()
+  let nav = useNavigate()
+  const [currentuser, setCurrentUser] = useState({ id: "", name: "", email: "", phone: "", address: "" });
+  const [qty, setqty] = useState(1);
+  const [showAddressForm, setShowAddressForm] = useState(false);
+  const [addressData, setAddressData] = useState({
+    street: '',
+    apartment: '',
+    city: '',
+    state: '',
+    zipcode: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [orderPlacing, setOrderPlacing] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('cod');
+  const [showCODConfirmation, setShowCODConfirmation] = useState(false);
+  const [showCashfreeModal, setShowCashfreeModal] = useState(false);
+  const [cashfreeLoading, setCashfreeLoading] = useState(false);
+  const [cashfreeReady, setCashfreeReady] = useState(false);
+
+  const context = useContext(itemContext)
+  const { fetchDetails, updateAddress } = context
+
+  // Initialize Cashfree SDK on component mount
+  useEffect(() => {
+    const initializeCashfree = () => {
+      // Check if Cashfree is already loaded
+      if (window.Cashfree) {
+        console.log('Cashfree SDK already loaded');
+        setCashfreeReady(true);
+        return;
       }
-      
-  }, [currentitem]); // Run only when currentitem changes
-  
-    const price=Number(currentitem.current.price.slice(1)) // Price Without Dollar Sign and in Integer
-    const Add=()=>{
-      setqty(qty+1)
+
+      // Poll for Cashfree to be loaded by the script tag
+      let retries = 0;
+      const checkCashfree = setInterval(() => {
+        if (window.Cashfree) {
+          console.log('Cashfree SDK loaded successfully');
+          setCashfreeReady(true);
+          clearInterval(checkCashfree);
+        }
+        retries++;
+        if (retries > 50) {
+          // Timeout after ~5 seconds
+          console.warn('Cashfree SDK timeout - it may still work, proceeding anyway');
+          setCashfreeReady(true);
+          clearInterval(checkCashfree);
+        }
+      }, 100);
+    };
+
+    initializeCashfree();
+  }, []);
+
+  useEffect(() => {
+    const getDetails = async () => {
+      const userDetails = await fetchDetails(localStorage.getItem("token"));
+      setCurrentUser(userDetails);
+      // Show form if address is empty or not provided
+      if (!userDetails.address || userDetails.address.trim() === '') {
+        setShowAddressForm(true);
+      }
+    };
+    getDetails();
+  }, []);
+
+  let currentitem = loc.state;
+  const [img, setimg] = useState();
+
+  useEffect(() => {
+    if (Array.isArray(currentitem.current.imgurl)) {
+      setimg(normalizeImageSrc(currentitem.current.imgurl[0]));
+    } else {
+      setimg(normalizeImageSrc(currentitem.current.imageURI));
     }
-    const Sub=()=>{
-      if(qty>=2)
-      setqty(qty-1)
-    } 
-    const OrderConfirm=async (qty)=>{
-      if(!localStorage.getItem('token'))
-      {
-        props.showalert("Login Required","danger")
-        return
-      }
-          
-      const today = new Date();
-  const formattedDate = new Intl.DateTimeFormat('en-In', {
-    year: 'numeric',
-    day: '2-digit',
-    month: '2-digit'
-  }).format(today);
-      
-  console.log(formattedDate)
-      const res=await fetch(`${API_HOST}/api/orders/addorders`,{
-        method:"POST",
-        headers:{
-          "content-type":"application/json",
-          "auth-token":localStorage.getItem('token')
+  }, [currentitem]);
+
+  const price = Number(currentitem.current.price.slice(1));
+  const subtotal = (price * qty).toFixed(2);
+  const gst = (0.18 * price * qty).toFixed(2);
+  const delivery = 5.00;
+  const total = (parseFloat(subtotal) + parseFloat(gst) + delivery).toFixed(2);
+
+  const handleAddressChange = (e) => {
+    const { name, value } = e.target;
+    setAddressData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSaveAddress = async () => {
+    if (!addressData.street || !addressData.city || !addressData.state || !addressData.zipcode) {
+      props.showalert("Please fill all address fields", "danger");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const updatedUser = await updateAddress(addressData);
+      setCurrentUser(updatedUser);
+      setShowAddressForm(false);
+      props.showalert("Address saved successfully", "success");
+    } catch (error) {
+      props.showalert(error.message || "Failed to save address", "danger");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCODConfirmation = async () => {
+    if (!localStorage.getItem('token')) {
+      props.showalert("Login Required", "danger")
+      return
+    }
+
+    if (!currentuser.address || currentuser.address.trim() === '') {
+      props.showalert("Please add delivery address first", "danger");
+      setShowAddressForm(true);
+      return;
+    }
+
+    setShowCODConfirmation(false);
+    setOrderPlacing(true);
+
+    const today = new Date();
+    const formattedDate = new Intl.DateTimeFormat('en-In', {
+      year: 'numeric',
+      day: '2-digit',
+      month: '2-digit'
+    }).format(today);
+
+    try {
+      const res = await fetch(`${API_HOST}/api/orders/addorders`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "auth-token": localStorage.getItem('token')
         },
         body: JSON.stringify({
           imageURI: img,
           title: currentitem.current.head || currentitem.current.title,
-          price: (((price*qty)+(0.18*price*qty)+5).toFixed(2) ), // assuming price is defined and multiplied by quantity
-          date:formattedDate
+          price: total,
+          date: formattedDate,
+          paymentMethod: 'COD',
+          quantity: qty
         })
       });
-      
-      try
-      {
-        if (!res.ok) throw new Error("Order failed");
-        props.showalert("Order Placed ", "success")
-        nav('/')
-      }
-      catch(error)
-      {
-        props.showalert("Some Error Occurred", "danger")
-        console.log(error)
-      }
-    }
-    return (
-      <>
-      <div className='' style={{height:"94.1vh",width:"99.99vw",backgroundColor:"rgb(241, 243, 246)",display:"flex"}}>
-        <div className='container' style={{width:"70vw",height:"80vh",marginTop:"30px",display:"flex",justifyContent:"center"}}>
-          <div className='Mbox1 ' style={{width:"100%"}}>
-            <div className='Box1 ' style={{height:"9vh", backgroundColor:"white"}}>
-              <div className='Details' style={{display:"flex",alignItems:"center"}}>
-                  <p style={{width:"30px",height:"30px",marginTop:"10px",marginLeft:"10px", textAlign:"center", backgroundColor:"rgb(240,240,240)",color:"blue"}}>1</p>
-                  <h6 style={{color:"rgb(135, 135, 135)",marginLeft:"20px"}}>LOGIN ✔️</h6>
-                  <button className='btn border' style={{position:"relative",left:"55vw",top:"20px"}}>Change</button>
-              </div>
-              <div style={{display:"flex"}}> 
-                <p style={{fontSize:"15px",marginLeft:"3vw",position:"relative",bottom:"12px",left:"10px"}}><b>{currentuser.name}</b></p>
-                <p style={{fontSize:"15px",marginLeft:"3vw",position:"relative",bottom:"12px",left:"10px"}}>+91{currentuser.phone}</p>
-              </div>
-            </div>
-            <div className='Box1 border' style={{height:"9vh", backgroundColor:"white"}}>
-              <div className='Details' style={{display:"flex",alignItems:"center"}}>
-                  <p style={{width:"30px",height:"30px",marginTop:"10px",marginLeft:"10px", textAlign:"center", backgroundColor:"rgb(240,240,240)",color:"blue"}}>2</p>
-                  <h6 className='' style={{color:"rgb(135, 135, 135)",marginLeft:"20px"}}>DELIVERY ADDRESS ✔️</h6>
-                  <button className='btn border' style={{position:"relative",left:"50vw",top:"20px"}}>Change</button>
-              </div>
-              <div style={{display:"flex" }}> 
-                <p style={{fontSize:"15px",marginLeft:"3vw",position:"relative",bottom:"12px",left:"10px"}}><b>{currentuser.address}</b></p>
-                {/* <p style={{fontSize:"15px",marginLeft:"3vw",position:"relative",bottom:"12px",left:"10px"}}>+917234907709</p> */}
-              </div>
-            </div>
-            <div className='Box2' style={{height:"75%",backgroundColor:"white"}}>
-              <div className='head' style={{height:"6vh",backgroundColor:"black",display:"flex",alignItems:"center"}}>
-              <p style={{width:"30px",height:"30px",marginTop:"10px",marginLeft:"10px", textAlign:"center", backgroundColor:"rgb(240,240,240)",color:"black"}}>3</p>
-              <h6 className='' style={{color:"white",marginLeft:"20px"}}>ORDER SUMMARY</h6>
-              </div>
-              <div className='body d-flex'>
 
-                <div className='pic mx-4'>
-                  <img src={img} alt={currentitem.current.title || currentitem.current.head || "Selected item"} onError={imageFallback} style={{height:"200px",width:"200px",objectFit:"contain",marginTop:"10vh",marginLeft:"2vw"}}/>
-                  <div style={{width:"10vw",display:"flex",justifyContent:"center",alignItems:"center",marginLeft:"2vw"}}>
-                    <button className='mx-3 my-3' onClick={Sub} style={{borderRadius:"20px",height:"30px",width:"30px",display:"flex",alignItems:"center",justifyContent:"center",backgroundColor:"black",color:"white",border:"none"}}><b>-</b></button>
-                    <input type="number" value={qty}onChange={(e) => setqty(Number(e.target.value))} style={{ width: "50px" }}/>
-                    <button className='mx-3 my-3' onClick={Add} style={{borderRadius:"20px",height:"30px",width:"30px",display:"flex",alignItems:"center",justifyContent:"center",backgroundColor:"black",color:"white",border:"none"}}><b>+</b></button>                </div>
-                </div>
-                <div className='bill' style={{width:"40vw",marginTop:"25px",marginLeft:"50px"}}>
-                      <h3>{currentitem.current.head}</h3>
-                      <p style={{color:"grey"}}>{currentitem.current.title}</p>
-                      <div className='BillBox' style={{height:"30vh"}}>
-                        <h3 style={{color:"grey",lineHeight:"10px"}}>PRICE DETAILS</h3>
-                        <hr></hr>
-                        <div className='d-flex' style={{justifyContent:"space-between",lineHeight:"10px",height:"10px"}}>
-                        <p style={{marginLeft:"20px"}}>Price({qty} item)</p>
-                        <p style={{marginRight:"20px"}}>${(price*qty).toFixed(2)}</p>
-                        </div>
-                        <hr></hr>
-                        <div className='d-flex' style={{justifyContent:"space-between",lineHeight:"10px",height:"10px"}}>
-                        <p style={{marginLeft:"20px"}}>GST Applied(18%)</p>
-                        <p style={{marginRight:"20px"}}>${(0.18*price*qty).toFixed(2)}</p>
-                        </div>
-                        <hr></hr>
-                        <div className='d-flex' style={{justifyContent:"space-between",lineHeight:"10px",height:"10px"}}>
-                          <p style={{marginLeft:"20px"}}>Delivery Charges</p>
-                          <p style={{marginRight:"20px"}}>$5</p>
-                        </div>
-                        <hr></hr>
-                        <div className='d-flex' style={{justifyContent:"space-between",lineHeight:"10px",height:"10px"}}>
-                          <p style={{marginLeft:"20px"}}><b>Total Amount</b></p>
-                          <p style={{marginRight:"20px"}}><b>${((price*qty)+(0.18*price*qty)+5).toFixed(2)}</b></p>
-                        </div>
-                        <div className='d-flex ' style={{justifyContent:'center',marginTop:"50px"}}>
-                          <button className='btn btn-success' style={{width:"100%"}} onClick={()=>{OrderConfirm(qty)}}>Confirm Order</button>
-                        </div>
-                      </div>
+      if (!res.ok) throw new Error("Order failed");
+      props.showalert("Order Placed Successfully - Payment on Delivery", "success")
+      nav('/')
+    } catch (error) {
+      props.showalert("Some Error Occurred", "danger")
+      console.log(error)
+    } finally {
+      setOrderPlacing(false);
+    }
+  };
+
+  const handleCashfreePayment = async () => {
+    if (!localStorage.getItem('token')) {
+      props.showalert("Login Required", "danger")
+      return
+    }
+
+    if (!currentuser.address || currentuser.address.trim() === '') {
+      props.showalert("Please add delivery address first", "danger");
+      setShowAddressForm(true);
+      return;
+    }
+
+    // Check if SDK is available
+    if (!window.Cashfree) {
+      props.showalert("Payment gateway is still loading. Please wait...", "warning");
+      return;
+    }
+
+    setShowCashfreeModal(false);
+    setCashfreeLoading(true);
+
+    const today = new Date();
+    const formattedDate = new Intl.DateTimeFormat('en-In', {
+      year: 'numeric',
+      day: '2-digit',
+      month: '2-digit'
+    }).format(today);
+
+    try {
+      // Step 1: Create order via backend
+      const createOrderRes = await fetch(`${API_HOST}/api/payment/create-order`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "auth-token": localStorage.getItem('token')
+        },
+        body: JSON.stringify({
+          amount: total,
+          currency: "INR",
+          productName: currentitem.current.head || currentitem.current.title,
+          quantity: qty,
+          imageURI: img,
+          date: formattedDate
+        })
+      });
+
+      const orderData = await createOrderRes.json();
+
+      if (!createOrderRes.ok) {
+        throw new Error(orderData.error || orderData.details?.message || "Failed to create payment order");
+      }
+
+      // Step 2: Extract payment session ID from response
+      const paymentSessionId = orderData.paymentSessionId || orderData.order_token;
+      if (!paymentSessionId) {
+        throw new Error("No payment session ID received from backend");
+      }
+
+      console.log("Opening Cashfree checkout with sessionId:", paymentSessionId);
+
+      // Step 3: Open Cashfree checkout modal
+      if (!window.Cashfree || !window.Cashfree.checkout) {
+        throw new Error("Cashfree checkout method not available. Please refresh the page and try again.");
+      }
+
+      const response = await window.Cashfree.checkout({
+        paymentSessionId,
+        redirectTarget: "_modal"
+      });
+
+      console.log("Cashfree checkout response:", response);
+
+      // Step 4: Handle payment response
+      if (response && response.orderId) {
+        // Payment completed - verify with backend
+        const verifyRes = await fetch(`${API_HOST}/api/payment/verify-payment`, {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "auth-token": localStorage.getItem('token')
+          },
+          body: JSON.stringify({
+            orderId: response.orderId,
+            paymentId: response.paymentId
+          })
+        });
+
+        const verifyData = await verifyRes.json();
+
+        if (verifyRes.ok && verifyData.success) {
+          props.showalert("Payment successful! Order placed.", "success");
+          nav('/');
+        } else {
+          props.showalert("Payment verification failed", "danger");
+        }
+      } else {
+        // User cancelled or payment incomplete
+        props.showalert("Payment cancelled or incomplete", "warning");
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      props.showalert(error.message || "Payment initiation failed", "danger")
+    } finally {
+      setCashfreeLoading(false);
+    }
+  };
+  return (
+    <div className="buy-page">
+      
+      <main className="checkout-main">
+        {/* Progress Tracker */}
+        <div className="progress-tracker">
+          <div className="connector-line"></div>
+          <div className="step-item">
+            <div className="step-circle completed">
+              <span className="material-symbols-outlined">check</span>
+            </div>
+            <span className="step-label">Account</span>
+          </div>
+          <div className="step-item">
+            <div className="step-circle completed">
+              <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 1"}}>radio_button_checked</span>
+            </div>
+            <span className="step-label">Shipping</span>
+          </div>
+          <div className="step-item">
+            <div className="step-circle inactive">
+              <span className="step-number">3</span>
+            </div>
+            <span className="step-label">Payment</span>
+          </div>
+        </div>
+
+        <div className="checkout-grid">
+          {/* Left Column: Forms */}
+          <div className="checkout-forms">
+            {/* Account Section */}
+            <section className="form-section">
+              <div className="section-header">
+                <h2 className="section-title">
+                  <span className="section-number">01</span>
+                  Account Info
+                </h2>
+                <button className="change-btn" onClick={() => nav('/login')}>Change</button>
+              </div>
+              <div className="account-card">
+                <div className="account-info">
+                  <div className="account-avatar">
+                    <span className="material-symbols-outlined">person</span>
+                  </div>
+                  <div>
+                    <p className="account-name">{currentuser.name}</p>
+                    <p className="account-phone">+91{currentuser.phone}</p>
+                  </div>
                 </div>
               </div>
+            </section>
+
+            {/* Shipping Section */}
+            <section className="form-section">
+              <div className="section-header">
+                <h2 className="section-title">
+                  <span className="section-number">02</span>
+                  Shipping Address
+                </h2>
+              </div>
+
+              {!showAddressForm && currentuser.address ? (
+                <div className="address-card">
+                  <p className="address-text">{currentuser.address}</p>
+                  <button 
+                    className="change-btn"
+                    onClick={() => setShowAddressForm(true)}
+                  >
+                    Change
+                  </button>
+                </div>
+              ) : (
+                <div className="address-form">
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label className="form-label">Street Address</label>
+                      <input
+                        type="text"
+                        name="street"
+                        className="form-input"
+                        placeholder="123 Precision Way"
+                        value={addressData.street}
+                        onChange={handleAddressChange}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Apartment/Suite</label>
+                      <input
+                        type="text"
+                        name="apartment"
+                        className="form-input"
+                        placeholder="Suite 404"
+                        value={addressData.apartment}
+                        onChange={handleAddressChange}
+                      />
+                    </div>
+                  </div>
+                  <div className="form-row-three">
+                    <div className="form-group">
+                      <label className="form-label">City</label>
+                      <input
+                        type="text"
+                        name="city"
+                        className="form-input"
+                        placeholder="San Francisco"
+                        value={addressData.city}
+                        onChange={handleAddressChange}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">State</label>
+                      <input
+                        type="text"
+                        name="state"
+                        className="form-input"
+                        placeholder="CA"
+                        value={addressData.state}
+                        onChange={handleAddressChange}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">ZIP Code</label>
+                      <input
+                        type="text"
+                        name="zipcode"
+                        className="form-input"
+                        placeholder="94103"
+                        value={addressData.zipcode}
+                        onChange={handleAddressChange}
+                      />
+                    </div>
+                  </div>
+                  <button 
+                    className="save-address-btn"
+                    onClick={handleSaveAddress}
+                    disabled={loading}
+                  >
+                    {loading ? 'Saving...' : 'Save Address'}
+                  </button>
+                </div>
+              )}
+            </section>
+
+            {/* Payment Method */}
+            <section className="form-section">
+              <div className="section-header">
+                <h2 className="section-title">
+                  <span className="section-number">03</span>
+                  Payment Method
+                </h2>
+              </div>
+              <div className="payment-methods">
+                <label className="payment-option">
+                  <input
+                    type="radio"
+                    name="payment"
+                    value="cod"
+                    checked={selectedPaymentMethod === 'cod'}
+                    onChange={(e) => setSelectedPaymentMethod(e.target.value)}
+                    className="payment-radio"
+                  />
+                  <div className="payment-card">
+                    <div className="payment-header">
+                      <span className="material-symbols-outlined">local_shipping</span>
+                      <h3>Cash on Delivery</h3>
+                    </div>
+                    <p className="payment-description">Pay when you receive your order</p>
+                  </div>
+                </label>
+
+                <label className="payment-option">
+                  <input
+                    type="radio"
+                    name="payment"
+                    value="cashfree"
+                    checked={selectedPaymentMethod === 'cashfree'}
+                    onChange={(e) => setSelectedPaymentMethod(e.target.value)}
+                    className="payment-radio"
+                    disabled={!cashfreeReady}
+                  />
+                  <div className={`payment-card ${!cashfreeReady ? 'opacity-50' : ''}`}>
+                    <div className="payment-header">
+                      <span className="material-symbols-outlined">credit_card</span>
+                      <h3>Online Payment</h3>
+                      {!cashfreeReady && <span style={{fontSize: '11px', marginLeft: '8px', color: '#999'}}>Loading...</span>}
+                    </div>
+                    <p className="payment-description">Secure payment via Cashfree (UPI, Cards, Wallets)</p>
+                  </div>
+                </label>
+              </div>
+            </section>
+          </div>
+
+          {/* Right Column: Order Summary */}
+          <div className="order-summary-container">
+            <div className="order-summary">
+              <h3 className="summary-title">Order Summary</h3>
+
+              {/* Product Item */}
+              <div className="product-item">
+                <div className="product-image">
+                  <img 
+                    src={img} 
+                    alt={currentitem.current.title || currentitem.current.head || "Product"}
+                  />
+                </div>
+                <div className="product-details">
+                  <h4 className="product-name">{currentitem.current.head}</h4>
+                  <p className="product-subtitle">{currentitem.current.title}</p>
+
+                  {/* Quantity Selector */}
+                  <div className="quantity-selector">
+                    <button 
+                      className="qty-btn"
+                      onClick={() => setqty(Math.max(1, qty - 1))}
+                    >
+                      <span className="material-symbols-outlined">remove</span>
+                    </button>
+                    <input
+                      type="number"
+                      className="qty-input"
+                      value={qty}
+                      onChange={(e) => setqty(Math.max(1, Number(e.target.value)))}
+                      readOnly
+                    />
+                    <button 
+                      className="qty-btn"
+                      onClick={() => setqty(qty + 1)}
+                    >
+                      <span className="material-symbols-outlined">add</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Price Breakdown */}
+              <div className="price-breakdown">
+                <div className="price-row">
+                  <span>Subtotal</span>
+                  <span>${subtotal}</span>
+                </div>
+                <div className="price-row">
+                  <span>GST (18%)</span>
+                  <span>${gst}</span>
+                </div>
+                <div className="price-row">
+                  <span>Delivery</span>
+                  <span className="delivery-price">${delivery.toFixed(2)}</span>
+                </div>
+                <div className="price-row total-row">
+                  <span>Total</span>
+                  <span>${total}</span>
+                </div>
+              </div>
+
+              {/* Confirm Order Button */}
+              <button 
+                className="confirm-btn"
+                onClick={() => {
+                  if (selectedPaymentMethod === 'cod') {
+                    setShowCODConfirmation(true);
+                  } else {
+                    if (!window.Cashfree) {
+                      props.showalert("Payment gateway is still loading. Please wait...", "warning");
+                      return;
+                    }
+                    setShowCashfreeModal(true);
+                  }
+                }}
+                disabled={orderPlacing || cashfreeLoading || (selectedPaymentMethod === 'cashfree' && !cashfreeReady)}
+              >
+                {orderPlacing || cashfreeLoading ? (
+                  <>
+                    <span className="spinner"></span>
+                    {selectedPaymentMethod === 'cod' ? 'Placing Order...' : 'Processing Payment...'}
+                  </>
+                ) : selectedPaymentMethod === 'cashfree' && !cashfreeReady ? (
+                  <>
+                    <span className="spinner"></span>
+                    Loading Payment Gateway...
+                  </>
+                ) : (
+                  <>
+                    Proceed to {selectedPaymentMethod === 'cod' ? 'Checkout' : 'Payment'}
+                    <span className="material-symbols-outlined">arrow_forward</span>
+                  </>
+                )}
+              </button>
+
+              <p className="security-text">
+                <span className="material-symbols-outlined">shield_lock</span>
+                Precision encrypted checkout by AURA
+              </p>
             </div>
           </div>
         </div>
-        </div>
-      </>
-    )
-  }
+      </main>
 
-  export default BuyPage
+      {/* COD Confirmation Modal */}
+      {showCODConfirmation && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>Confirm Order</h2>
+              <button 
+                className="modal-close"
+                onClick={() => setShowCODConfirmation(false)}
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="confirmation-details">
+                <div className="detail-row">
+                  <span className="detail-label">Order Total:</span>
+                  <span className="detail-value">${total}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Payment Method:</span>
+                  <span className="detail-value">Cash on Delivery</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Delivery Address:</span>
+                  <span className="detail-value">{currentuser.address}</span>
+                </div>
+              </div>
+              <p className="modal-info">
+                You will receive your order and can pay the amount at the time of delivery.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="modal-btn cancel-btn"
+                onClick={() => setShowCODConfirmation(false)}
+                disabled={orderPlacing}
+              >
+                Cancel
+              </button>
+              <button 
+                className="modal-btn confirm-payment-btn"
+                onClick={handleCODConfirmation}
+                disabled={orderPlacing}
+              >
+                {orderPlacing ? (
+                  <>
+                    <span className="spinner-small"></span>
+                    Placing Order...
+                  </>
+                ) : (
+                  'Confirm Order'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cashfree Payment Modal */}
+      {showCashfreeModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>Online Payment</h2>
+              <button 
+                className="modal-close"
+                onClick={() => setShowCashfreeModal(false)}
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="confirmation-details">
+                <div className="detail-row">
+                  <span className="detail-label">Order Total:</span>
+                  <span className="detail-value">${total}</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Payment Method:</span>
+                  <span className="detail-value">Cashfree (UPI, Cards, Wallets)</span>
+                </div>
+                <div className="detail-row">
+                  <span className="detail-label">Delivery Address:</span>
+                  <span className="detail-value">{currentuser.address}</span>
+                </div>
+              </div>
+              <p className="modal-info">
+                You will be redirected to the secure Cashfree payment gateway.
+              </p>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="modal-btn cancel-btn"
+                onClick={() => setShowCashfreeModal(false)}
+                disabled={cashfreeLoading}
+              >
+                Cancel
+              </button>
+              <button 
+                className="modal-btn confirm-payment-btn"
+                onClick={handleCashfreePayment}
+                disabled={cashfreeLoading}
+              >
+                {cashfreeLoading ? (
+                  <>
+                    <span className="spinner-small"></span>
+                    Processing...
+                  </>
+                ) : (
+                  'Proceed to Payment'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <footer className="checkout-footer">
+        <div className="footer-content">
+          <p className="footer-text">© 2024 AURA. Precision Engineered.</p>
+          <div className="footer-links">
+            <a href="#privacy">Privacy</a>
+            <a href="#terms">Terms</a>
+            <a href="#sustainability">Sustainability</a>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+export default BuyPage;
