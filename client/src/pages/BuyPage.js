@@ -6,6 +6,29 @@ import { API_HOST } from '../config';
 import { normalizeImageSrc } from '../utils/images';
 import '../styles/buypage.css';
 
+// Dynamically load Cashfree SDK
+const loadCashfreeSDK = async () => {
+  return new Promise((resolve, reject) => {
+    if (window.Cashfree) {
+      resolve(window.Cashfree);
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://sdk.cashfree.com/js/core/3.0.0/cashfree.js';
+    script.async = true;
+    script.onload = () => {
+      if (window.Cashfree) {
+        resolve(window.Cashfree);
+      } else {
+        reject(new Error('Cashfree not loaded'));
+      }
+    };
+    script.onerror = () => reject(new Error('Failed to load Cashfree SDK'));
+    document.body.appendChild(script);
+  });
+};
+
 function BuyPage(props) {
   let loc = useLocation()
   let nav = useNavigate()
@@ -32,30 +55,16 @@ function BuyPage(props) {
 
   // Initialize Cashfree SDK on component mount
   useEffect(() => {
-    const initializeCashfree = () => {
-      // Check if Cashfree is already loaded
-      if (window.Cashfree) {
-        console.log('Cashfree SDK already loaded');
+    const initializeCashfree = async () => {
+      try {
+        const cf = await loadCashfreeSDK();
+        console.log('Cashfree SDK loaded successfully:', cf);
         setCashfreeReady(true);
-        return;
+      } catch (error) {
+        console.error('Failed to load Cashfree SDK:', error);
+        // Still mark as ready to allow payment attempts
+        setCashfreeReady(true);
       }
-
-      // Poll for Cashfree to be loaded by the script tag
-      let retries = 0;
-      const checkCashfree = setInterval(() => {
-        if (window.Cashfree) {
-          console.log('Cashfree SDK loaded successfully');
-          setCashfreeReady(true);
-          clearInterval(checkCashfree);
-        }
-        retries++;
-        if (retries > 50) {
-          // Timeout after ~5 seconds
-          console.warn('Cashfree SDK timeout - it may still work, proceeding anyway');
-          setCashfreeReady(true);
-          clearInterval(checkCashfree);
-        }
-      }, 100);
     };
 
     initializeCashfree();

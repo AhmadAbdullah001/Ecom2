@@ -32,22 +32,20 @@ function AppContent({ showAlert }) {
   return (
     <>
       {shouldShowNavbar && <Navbar showalert={showAlert} />}
-      <Routes>
-        <Route path='/' element={<Home showalert={showAlert} />} />
-        <Route path='/graphics' element={<GraphicsCards showalert={showAlert} />} />
-        <Route path='/processors' element={<Processors showalert={showAlert} />} />
-        <Route path='/motherboards' element={<Motherboards showalert={showAlert} />} />
-        <Route path='/ram' element={<RAM showalert={showAlert} />} />
-        <Route path='/ssds' element={<SSDs showalert={showAlert} />} />
-        <Route path='/monitors' element={<Monitors showalert={showAlert} />} />
-        <Route path='/keyboards' element={<Keyboards showalert={showAlert} />} />
-        <Route path='/mice' element={<Mice showalert={showAlert} />} />
-        <Route path='/headsets' element={<Headsets showalert={showAlert} />} />
-        <Route path='/itemdetails' element={<Itemdetails showalert={showAlert} />} />
-        <Route path='/buypage' element={<BuyPage showalert={showAlert} />} />
-      </Routes>
       <div className='container'>
         <Routes>
+          <Route path='/' element={<Home showalert={showAlert} />} />
+          <Route path='/graphics' element={<GraphicsCards showalert={showAlert} />} />
+          <Route path='/processors' element={<Processors showalert={showAlert} />} />
+          <Route path='/motherboards' element={<Motherboards showalert={showAlert} />} />
+          <Route path='/ram' element={<RAM showalert={showAlert} />} />
+          <Route path='/ssds' element={<SSDs showalert={showAlert} />} />
+          <Route path='/monitors' element={<Monitors showalert={showAlert} />} />
+          <Route path='/keyboards' element={<Keyboards showalert={showAlert} />} />
+          <Route path='/mice' element={<Mice showalert={showAlert} />} />
+          <Route path='/headsets' element={<Headsets showalert={showAlert} />} />
+          <Route path='/itemdetails' element={<Itemdetails showalert={showAlert} />} />
+          <Route path='/buypage' element={<BuyPage showalert={showAlert} />} />
           <Route path='/cart' element={<Cart showalert={showAlert}/>} />
           <Route path='/contact' element={<ContactUs showalert={showAlert}/>} />
           <Route path='/orders' element={<Orders showalert={showAlert}/>} />
