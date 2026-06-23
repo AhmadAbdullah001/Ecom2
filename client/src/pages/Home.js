@@ -23,28 +23,28 @@ function Home(props) {
       console.log('[Home] Got products:', temp?.length || 0);
       console.log('[Home] Got categories:', categories?.length || 0);
       
-      const matchedHomeCategory = Array.isArray(categories)
-        ? categories.find((cat) => normalizeCategoryName(cat.name) === "home")
-        : null;
-      const productArray = Array.isArray(temp) ? temp.filter(Boolean) : [];
-
-      console.log('[Home] Filtered products:', productArray.length);
-      
-      const filtered = productArray.filter((product) =>
-        productMatchesCategory(product, "home", matchedHomeCategory)
-      );
-      
-      console.log('[Home] Final filtered products:', filtered.length);
-      if (filtered.length === 0) {
-        console.warn('[Home] No products match the home category');
+      if (categories && categories.length > 0) {
+        console.log('[Home] Available categories:', categories.map(c => c.name));
       }
       
-      setItems(filtered);
+      const productArray = Array.isArray(temp) ? temp.filter(Boolean) : [];
+      console.log('[Home] Total valid products:', productArray.length);
+
+      // Show all products on home page (no category filter)
+      // This ensures products display even if category system hasn't been set up
+      if (productArray.length > 0) {
+        console.log('[Home] Displaying all', productArray.length, 'products');
+        setItems(productArray);
+      } else {
+        console.warn('[Home] No products found in database');
+        setItems([]);
+      }
     } catch (err) {
       console.error('[Home] Error loading products:', err);
       props.showalert?.('Error loading products: ' + err.message, 'danger');
+      setItems([]);
     }
-  }, [fetchproducts, getCategories]);
+  }, [fetchproducts, getCategories, props]);
 
   useEffect(() => {
     getProductArray();
@@ -56,19 +56,34 @@ function Home(props) {
 
   const getProductImage = (item) => {
     try {
-      if (Array.isArray(item?.imgurl) && item.imgurl.length > 0) {
-        const imageUrl = normalizeImageSrc(item.imgurl[0]);
-        console.log('[Home Image] Using imgurl:', imageUrl.substring(0, 80) + '...');
-        return imageUrl;
-      }
-
-      if (item?.imageURI) {
-        const imageUrl = normalizeImageSrc(item.imageURI);
-        console.log('[Home Image] Using imageURI:', imageUrl.substring(0, 80) + '...');
-        return imageUrl;
+      if (!item) {
+        console.warn('[Home Image] Item is null/undefined');
+        return '';
       }
       
-      console.warn('[Home Image] No image found for product:', item?.title);
+      // Check for imgurl (from products collection)
+      if (Array.isArray(item?.imgurl) && item.imgurl.length > 0) {
+        const imageUrl = item.imgurl[0];
+        if (imageUrl) {
+          console.log('[Home Image] Using imgurl:', imageUrl.substring(0, 80) + '...');
+          return imageUrl;
+        }
+      }
+
+      // Check for imageURI (from cart items)
+      if (item?.imageURI) {
+        console.log('[Home Image] Using imageURI:', item.imageURI.substring(0, 80) + '...');
+        return item.imageURI;
+      }
+      
+      // No image found
+      console.warn('[Home Image] No image found for product:', {
+        title: item?.title,
+        hasImgurl: !!item?.imgurl,
+        imgUrlCount: item?.imgurl?.length || 0,
+        hasImageURI: !!item?.imageURI,
+        keys: Object.keys(item || {})
+      });
       return '';
     } catch (err) {
       console.error('[Home Image] Error getting image:', err);

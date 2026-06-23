@@ -216,7 +216,10 @@ function FunctionContext(props) {
   // Get All Categories
   const getCategories = async () => {
     try {
-      const res = await fetch(`${API_HOST}/api/category/getcategories`);
+      const endpoint = `${API_HOST}/api/category/getcategories`;
+      console.log('[Get Categories] Endpoint:', endpoint);
+      
+      const res = await fetch(endpoint);
 
       const data = await readJsonResponse(res, "Get categories");
 
@@ -224,10 +227,15 @@ function FunctionContext(props) {
         throw new Error(data.error || `Failed to fetch categories: ${res.status}`);
       }
 
+      console.log('[Get Categories] Got', data.length || 0, 'categories');
+      if (Array.isArray(data) && data.length > 0) {
+        console.log('[Get Categories] Category names:', data.map(c => c.name));
+      }
+      
       return data;
 
     } catch (err) {
-      console.error(err);
+      console.error('[Get Categories] Error:', err);
       return [];
     }
   };
