@@ -102,10 +102,26 @@ router.post("/addproduct", upload.array("images", 6), async (req, res) => {
 });
 router.get("/fetchproducts", async (req, res) => {
   try {
+    console.log('[Product API] Fetching all products...');
     const list = await product.find();
+    console.log('[Product API] Found', list.length, 'products');
+    
+    if (list.length === 0) {
+      console.warn('[Product API] No products in database');
+    } else {
+      // Log first product to verify structure
+      const firstProduct = list[0];
+      console.log('[Product API] First product:', {
+        id: firstProduct._id,
+        title: firstProduct.title,
+        imgurl: firstProduct.imgurl ? firstProduct.imgurl.length + ' images' : 'no images',
+        price: firstProduct.price
+      });
+    }
+    
     res.json(list);
   } catch (error) {
-    console.error(error.message);
+    console.error('[Product API] Error fetching products:', error.message);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });

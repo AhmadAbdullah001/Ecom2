@@ -16,17 +16,34 @@ function Home(props) {
   };
 
   const getProductArray = useCallback(async () => {
-    const [temp, categories] = await Promise.all([fetchproducts(), getCategories()]);
-    const matchedHomeCategory = Array.isArray(categories)
-      ? categories.find((cat) => normalizeCategoryName(cat.name) === "home")
-      : null;
-    const productArray = Array.isArray(temp) ? temp.filter(Boolean) : [];
+    try {
+      console.log('[Home] Fetching products...');
+      const [temp, categories] = await Promise.all([fetchproducts(), getCategories()]);
+      
+      console.log('[Home] Got products:', temp?.length || 0);
+      console.log('[Home] Got categories:', categories?.length || 0);
+      
+      const matchedHomeCategory = Array.isArray(categories)
+        ? categories.find((cat) => normalizeCategoryName(cat.name) === "home")
+        : null;
+      const productArray = Array.isArray(temp) ? temp.filter(Boolean) : [];
 
-    setItems(
-      productArray.filter((product) =>
+      console.log('[Home] Filtered products:', productArray.length);
+      
+      const filtered = productArray.filter((product) =>
         productMatchesCategory(product, "home", matchedHomeCategory)
-      )
-    );
+      );
+      
+      console.log('[Home] Final filtered products:', filtered.length);
+      if (filtered.length === 0) {
+        console.warn('[Home] No products match the home category');
+      }
+      
+      setItems(filtered);
+    } catch (err) {
+      console.error('[Home] Error loading products:', err);
+      props.showalert?.('Error loading products: ' + err.message, 'danger');
+    }
   }, [fetchproducts, getCategories]);
 
   useEffect(() => {
@@ -38,11 +55,25 @@ function Home(props) {
   };
 
   const getProductImage = (item) => {
-    if (Array.isArray(item?.imgurl) && item.imgurl.length > 0) {
-      return normalizeImageSrc(item.imgurl[0]);
-    }
+    try {
+      if (Array.isArray(item?.imgurl) && item.imgurl.length > 0) {
+        const imageUrl = normalizeImageSrc(item.imgurl[0]);
+        console.log('[Home Image] Using imgurl:', imageUrl.substring(0, 80) + '...');
+        return imageUrl;
+      }
 
-    return normalizeImageSrc(item?.imageURI);
+      if (item?.imageURI) {
+        const imageUrl = normalizeImageSrc(item.imageURI);
+        console.log('[Home Image] Using imageURI:', imageUrl.substring(0, 80) + '...');
+        return imageUrl;
+      }
+      
+      console.warn('[Home Image] No image found for product:', item?.title);
+      return '';
+    } catch (err) {
+      console.error('[Home Image] Error getting image:', err);
+      return '';
+    }
   };
 
   const heroProduct = items[6] || items[0];

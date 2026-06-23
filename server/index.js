@@ -14,7 +14,35 @@ connectToMongo();
 const app = express();
 const port = process.env.PORT || 3002;
 
-app.use(cors());
+// CORS configuration for development and production
+const allowedOrigins = [
+  'http://localhost:3001',
+  'http://localhost:3002',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
+// In production, same-origin requests don't need CORS (no Origin header)
+// In development, we allow specific origins
+app.use(cors({
+  origin: function(origin, callback) {
+    // No origin header = same-origin request (production on Render) - always allow
+    if (!origin) {
+      console.log('[CORS] Same-origin request - allowed');
+      callback(null, true);
+      return;
+    }
+    
+    // Check if origin is allowed
+    if (allowedOrigins.includes(origin)) {
+      console.log('[CORS] Allowed origin:', origin);
+      callback(null, true);
+    } else {
+      console.warn('[CORS] Blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
 
 // Only parse JSON for non-multipart requests
 app.use(express.json({ 

@@ -44,20 +44,22 @@ function FunctionContext(props) {
       );
 
       if (!res.ok) {
-        throw new Error("Server Error");
+        console.error('[Add to Cart] Server Error:', res.status, res.statusText);
+        throw new Error('Server Error');
       }
 
       const data = await res.json();
+      console.log('[Add to Cart] Response:', data);
 
       if (data === 1) {
-        props.showalert("Item Already Exists", "danger");
+        props.showalert('Item Already Exists', 'danger');
       } else {
-        props.showalert("Item Added", "success");
+        props.showalert('Item Added', 'success');
       }
 
     } catch (err) {
-      console.error(err);
-      props.showalert("Something went wrong", "danger");
+      console.error('[Add to Cart] Error:', err);
+      props.showalert('Something went wrong: ' + err.message, 'danger');
     }
   };
 
@@ -87,17 +89,20 @@ function FunctionContext(props) {
 
   // Fetch Products
   const fetchproducts = async () => {
+    const endpoint = `${API_HOST}/api/product/fetchproducts`;
+    console.log('[Fetch Products] Endpoint:', endpoint);
 
     try {
-      const res = await fetch(
-        `${API_HOST}/api/product/fetchproducts`
-      );
+      const res = await fetch(endpoint);
 
       if (!res.ok) {
+        console.error('[Fetch Products] HTTP Error:', res.status);
         throw new Error(`Failed to fetch products: ${res.status}`);
       }
 
-      return await res.json();
+      const data = await res.json();
+      console.log('[Fetch Products] Success, got', data.length || 0, 'products');
+      return data;
 
     } catch (err) {
       console.error(err);
