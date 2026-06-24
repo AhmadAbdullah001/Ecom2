@@ -347,28 +347,7 @@ function BuyPage(props) {
     <div className="buy-page">
       
       <main className="checkout-main">
-        {/* Progress Tracker */}
-        <div className="progress-tracker">
-          <div className="connector-line"></div>
-          <div className="step-item">
-            <div className="step-circle completed">
-              <span className="material-symbols-outlined">check</span>
-            </div>
-            <span className="step-label">Account</span>
-          </div>
-          <div className="step-item">
-            <div className="step-circle completed">
-              <span className="material-symbols-outlined" style={{fontVariationSettings: "'FILL' 1"}}>radio_button_checked</span>
-            </div>
-            <span className="step-label">Shipping</span>
-          </div>
-          <div className="step-item">
-            <div className="step-circle inactive">
-              <span className="step-number">3</span>
-            </div>
-            <span className="step-label">Payment</span>
-          </div>
-        </div>
+       
 
         <div className="checkout-grid">
           {/* Left Column: Forms */}
@@ -523,14 +502,14 @@ function BuyPage(props) {
                     className="payment-radio"
                     disabled={!cashfreeReady}
                   />
-                  <div className={`payment-card ${!cashfreeReady ? 'opacity-50' : ''}`}>
+                  {/* <div className={`payment-card ${!cashfreeReady ? 'opacity-50' : ''}`}>
                     <div className="payment-header">
                       <span className="material-symbols-outlined">credit_card</span>
                       <h3>Online Payment</h3>
                       {!cashfreeReady && <span style={{fontSize: '11px', marginLeft: '8px', color: '#999'}}>Loading...</span>}
                     </div>
                     <p className="payment-description">Secure payment via Cashfree (UPI, Cards, Wallets)</p>
-                  </div>
+                  </div> */}
                 </label>
               </div>
             </section>
@@ -636,10 +615,10 @@ function BuyPage(props) {
                 )}
               </button>
 
-              <p className="security-text">
+              {/* <p className="security-text">
                 <span className="material-symbols-outlined">shield_lock</span>
                 Precision encrypted checkout by AURA
-              </p>
+              </p> */}
             </div>
           </div>
         </div>
