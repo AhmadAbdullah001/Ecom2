@@ -71,6 +71,33 @@
   font-size: 20px;
 }
 
+.profile-avatar-actions {
+  margin-top: 16px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.profile-upload-btn,
+.profile-cancel-btn {
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: 8px;
+  border: 0;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.profile-upload-btn {
+  color: #ffffff;
+  background: #334155;
+}
+
+.profile-cancel-btn {
+  color: #1d2b3e;
+  background: #f4f4f2;
+}
+
 .profile-eyebrow,
 .profile-field-list p,
 .profile-footer h3 {

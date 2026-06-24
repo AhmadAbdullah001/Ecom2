@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import itemContext from "../context/Context";
 import { normalizeImageSrc } from "../utils/images";
 import { normalizeCategoryName, productMatchesCategory } from "../utils/categories";
@@ -110,11 +110,15 @@ function Home(props) {
   const heroProduct = items[6] || items[0];
 
   const categories = [
-    { icon: "memory", label: "Processors" },
-    { icon: "developer_board", label: "Graphics Cards" },
-    { icon: "monitor", label: "Displays" },
-    { icon: "keyboard", label: "Accessories" },
+    { icon: "memory", label: "Processors", path: "/processors" },
+    { icon: "developer_board", label: "Graphics Cards", path: "/graphics" },
+    { icon: "monitor", label: "Displays", path: "/monitors" },
+    { icon: "keyboard", label: "Accessories", path: "/keyboards" },
   ];
+
+  const handleCategoryClick = (path) => {
+    nav(path);
+  };
 
   const features = [
     {
@@ -179,7 +183,13 @@ function Home(props) {
       <section className="home-categories">
         <div className="home-shell home-category-grid">
           {categories.map((category) => (
-            <button className="home-category-card" type="button" key={category.label}>
+            <button 
+              className="home-category-card" 
+              type="button" 
+              key={category.label}
+              onClick={() => handleCategoryClick(category.path)}
+              aria-label={`View ${category.label}`}
+            >
               <span className="material-symbols-outlined">{category.icon}</span>
               <strong>{category.label}</strong>
             </button>
@@ -269,21 +279,21 @@ function Home(props) {
           </div>
           <div>
             <span>Products</span>
-            <a href="#signature-series">Processors</a>
-            <a href="#signature-series">Graphics Cards</a>
-            <a href="#signature-series">Laptops</a>
+            <Link to="/processors">Processors</Link>
+            <Link to="/graphics">Graphics Cards</Link>
+            <Link to="/laptops">Laptops</Link>
           </div>
           <div>
             <span>Support</span>
-            <a href="/contact">Documentation</a>
-            <a href="/contact">Shipping Info</a>
-            <a href="/contact">Return Policy</a>
+            <Link to="/documentation">Documentation</Link>
+            <Link to="/shipping">Shipping Info</Link>
+            <Link to="/return-policy">Return Policy</Link>
           </div>
           <div>
             <span>Legal</span>
-            <a href="#signature-series">Privacy</a>
-            <a href="#signature-series">Terms of Service</a>
-            <a href="#signature-series">Compliance</a>
+            <Link to="/privacy">Privacy</Link>
+            <Link to="/terms">Terms of Service</Link>
+            <Link to="/compliance">Compliance</Link>
           </div>
         </div>
         <div className="home-shell home-footer-bottom">

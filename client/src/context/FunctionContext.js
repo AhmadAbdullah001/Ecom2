@@ -66,23 +66,23 @@ function FunctionContext(props) {
 
   // Fetch User Details
   const fetchDetails = async () => {
-
     try {
-      const res = await fetch(
-        `${API_HOST}/api/auth/getuser`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "auth-token": localStorage.getItem("token"),
-          },
-        }
-      );
+      const res = await fetch(`${API_HOST}/api/auth/getuser`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "auth-token": localStorage.getItem("token"),
+        },
+      });
 
-      return await res.json();
-
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to fetch user details");
+      }
+      return data;
     } catch (err) {
       console.error(err);
+      throw err;
     }
   };
 
@@ -302,6 +302,54 @@ function FunctionContext(props) {
     }
   };
 
+  // Update User Profile
+  const updateProfile = async (profileData) => {
+    try {
+      const res = await fetch(`${API_HOST}/api/auth/updateprofile`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "auth-token": localStorage.getItem("token"),
+        },
+        body: JSON.stringify(profileData),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to update profile");
+      }
+      return data;
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  };
+
+  // Upload user avatar
+  const uploadAvatar = async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append("avatar", file);
+
+      const res = await fetch(`${API_HOST}/api/auth/uploadavatar`, {
+        method: "POST",
+        headers: {
+          "auth-token": localStorage.getItem("token"),
+        },
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to upload avatar");
+      }
+      return data;
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  };
+
   // Create Cashfree Payment Order
   const createCashfreePaymentOrder = async (paymentData) => {
     try {
@@ -366,6 +414,8 @@ function FunctionContext(props) {
         getCategories,
         getCategory,
         updateAddress,
+        updateProfile,
+        uploadAvatar,
         createCashfreePaymentOrder,
         verifyCashfreePayment
       }}

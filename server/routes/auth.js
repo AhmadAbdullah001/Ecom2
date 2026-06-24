@@ -4,6 +4,8 @@ const  bcrypt=require('bcryptjs')
 const router=express.Router()
 const jwt=require('jsonwebtoken')
 const fetchuser=require('../middleware/fetchuser')
+const upload = require('../middleware/multer')
+const cloudinary = require('../config/cloudinary')
 const JWT_SECRET=process.env.JWT_SECRET || 'Abdullahisgood$oy'
 
 //For Signup
@@ -99,6 +101,66 @@ router.post("/getuser", fetchuser, async (req, res) => {
       ).select("-password");
 
       res.json(User);
+    } catch (error) {
+      console.error(error.message);
+      res.status(500).send("Internal Server Error");
+    }
+  });
+
+  // Router 5 - Update User Profile (name, phone, email)
+  router.post("/updateprofile", fetchuser, async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { name, phone, email } = req.body;
+
+      const updateData = {};
+      if (name) updateData.name = name;
+      if (phone) updateData.phone = phone;
+      if (email) {
+        const existingUser = await user.findOne({ email, _id: { $ne: userId } });
+        if (existingUser) {
+          return res.status(400).json({ error: "Email already in use" });
+        }
+        updateData.email = email;
+      }
+
+      const User = await user.findByIdAndUpdate(userId, updateData, { new: true }).select("-password");
+      res.json(User);
+    } catch (error) {
+      console.error(error.message);
+      res.status(500).send("Internal Server Error");
+    }
+  });
+
+  // Router 6 - Upload profile avatar image and update user record
+  router.post("/uploadavatar", fetchuser, upload.single("avatar"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "Avatar file is required" });
+      }
+
+      if (!cloudinary.isConfigured()) {
+        return res.status(500).json({ error: "Cloudinary is not configured" });
+      }
+
+      const uploadResult = await cloudinary.uploader.upload_stream(
+        { folder: "profile_avatars" },
+        async (error, result) => {
+          if (error) {
+            console.error(error);
+            return res.status(500).json({ error: "Cloudinary upload failed" });
+          }
+
+          const avatarUrl = result.secure_url;
+          const userId = req.user.id;
+          const User = await user.findByIdAndUpdate(userId, { avatar: avatarUrl }, { new: true }).select("-password");
+
+          res.json(User);
+        }
+      );
+
+      const streamifier = require("streamifier");
+      streamifier.createReadStream(req.file.buffer).pipe(uploadResult);
     } catch (error) {
       console.error(error.message);
       res.status(500).send("Internal Server Error");

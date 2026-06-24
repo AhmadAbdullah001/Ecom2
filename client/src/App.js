@@ -23,6 +23,13 @@ import Keyboards from './pages/Keyboards';
 import Mice from './pages/Mice';
 import Headsets from './pages/Headsets';
 import AdminPanel from './pages/AdminPanel';
+import Laptops from './pages/Laptops';
+import Documentation from './pages/Documentation';
+import Shipping from './pages/Shipping';
+import ReturnPolicy from './pages/ReturnPolicy';
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
+import Compliance from './pages/Compliance';
 
 function AppContent({ showAlert }) {
   const location = useLocation();
@@ -55,6 +62,13 @@ function AppContent({ showAlert }) {
           <Route path='/contact' element={<ContactUs showalert={showAlert}/>} />
           <Route path='/orders' element={<Orders showalert={showAlert}/>} />
           <Route path='/profile' element={<Profile showalert={showAlert}/>} />
+          <Route path='/laptops' element={<Laptops showalert={showAlert}/>} />
+          <Route path='/documentation' element={<Documentation showalert={showAlert}/>} />
+          <Route path='/shipping' element={<Shipping showalert={showAlert}/>} />
+          <Route path='/return-policy' element={<ReturnPolicy showalert={showAlert}/>} />
+          <Route path='/privacy' element={<Privacy showalert={showAlert}/>} />
+          <Route path='/terms' element={<Terms showalert={showAlert}/>} />
+          <Route path='/compliance' element={<Compliance showalert={showAlert}/>} />
           <Route path='/login' element={<Login showalert={showAlert} />} />
           <Route path='/signup' element={<Signup showalert={showAlert} />} />
           <Route path='/admin' element={<AdminPanel showalert={showAlert} />} />
