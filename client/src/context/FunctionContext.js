@@ -96,13 +96,37 @@ function FunctionContext(props) {
       const res = await fetch(endpoint);
 
       if (!res.ok) {
-        console.error('[Fetch Products] HTTP Error:', res.status);
+        console.error('[Fetch Products] HTTP Error:', res.status, res.statusText);
         throw new Error(`Failed to fetch products: ${res.status}`);
       }
 
       const data = await res.json();
-      console.log('[Fetch Products] Success, got', data.length || 0, 'products');
+      console.log('[Fetch Products] ✅ Success! Got', data?.length || 0, 'products');
+      
+      if (Array.isArray(data) && data.length > 0) {
+        // Log first 3 products to see structure
+        console.log('[Fetch Products] First product structure:', {
+          id: data[0]._id,
+          title: data[0].title,
+          price: data[0].price,
+          hasImgurl: !!data[0].imgurl,
+          imgurlType: typeof data[0].imgurl,
+          imgurlLength: Array.isArray(data[0].imgurl) ? data[0].imgurl.length : 'not array',
+          imgurlFirstItem: data[0].imgurl?.[0]?.substring(0, 60),
+          categoryName: data[0].categoryName,
+          category: data[0].category
+        });
+      } else if (Array.isArray(data) && data.length === 0) {
+        console.warn('[Fetch Products] ⚠️ Database has 0 products!');
+      }
+      
       return data;
+
+    } catch (err) {
+      console.error('[Fetch Products] ❌ Error:', err.message);
+      return [];
+    }
+  };
 
     } catch (err) {
       console.error(err);

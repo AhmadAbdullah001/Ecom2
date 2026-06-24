@@ -17,30 +17,40 @@ function Home(props) {
 
   const getProductArray = useCallback(async () => {
     try {
-      console.log('[Home] Fetching products...');
+      console.log('[Home] 🔄 Fetching products...');
       const [temp, categories] = await Promise.all([fetchproducts(), getCategories()]);
       
-      console.log('[Home] Got products:', temp?.length || 0);
-      console.log('[Home] Got categories:', categories?.length || 0);
+      console.log('[Home] 📊 Got products:', temp?.length || 0);
+      console.log('[Home] 📁 Got categories:', categories?.length || 0);
       
       if (categories && categories.length > 0) {
-        console.log('[Home] Available categories:', categories.map(c => c.name));
+        console.log('[Home] 📂 Available categories:', categories.map(c => c.name));
       }
       
       const productArray = Array.isArray(temp) ? temp.filter(Boolean) : [];
-      console.log('[Home] Total valid products:', productArray.length);
+      console.log('[Home] ✅ Total valid products:', productArray.length);
 
       // Show all products on home page (no category filter)
       // This ensures products display even if category system hasn't been set up
       if (productArray.length > 0) {
-        console.log('[Home] Displaying all', productArray.length, 'products');
+        console.log('[Home] 🎉 Displaying all', productArray.length, 'products');
+        
+        // Show product summary
+        productArray.slice(0, 3).forEach((p, i) => {
+          console.log(`  Product ${i + 1}: ${p.title} - Rs.${p.price}`, {
+            hasImages: !!p.imgurl && p.imgurl.length > 0,
+            imageCount: p.imgurl?.length || 0
+          });
+        });
+        
         setItems(productArray);
       } else {
-        console.warn('[Home] No products found in database');
+        console.warn('[Home] ⚠️ No products found in database');
+        props.showalert?.('No products available', 'info');
         setItems([]);
       }
     } catch (err) {
-      console.error('[Home] Error loading products:', err);
+      console.error('[Home] ❌ Error loading products:', err);
       props.showalert?.('Error loading products: ' + err.message, 'danger');
       setItems([]);
     }
@@ -58,36 +68,37 @@ function Home(props) {
     try {
       if (!item) {
         console.warn('[Home Image] Item is null/undefined');
-        return '';
+        return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23f0f0f0" width="200" height="200"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999" font-family="Arial" font-size="14"%3ENo Image%3C/text%3E%3C/svg%3E';
       }
       
       // Check for imgurl (from products collection)
-      if (Array.isArray(item?.imgurl) && item.imgurl.length > 0) {
+      if (Array.isArray(item?.imgurl) && item.imgurl.length > 0 && item.imgurl[0]) {
         const imageUrl = item.imgurl[0];
-        if (imageUrl) {
-          console.log('[Home Image] Using imgurl:', imageUrl.substring(0, 80) + '...');
-          return imageUrl;
-        }
+        console.log('[Home Image] ✅ Using imgurl:', imageUrl.substring(0, 80) + '...');
+        return imageUrl;
       }
 
       // Check for imageURI (from cart items)
       if (item?.imageURI) {
-        console.log('[Home Image] Using imageURI:', item.imageURI.substring(0, 80) + '...');
+        console.log('[Home Image] ✅ Using imageURI:', item.imageURI.substring(0, 80) + '...');
         return item.imageURI;
       }
       
-      // No image found
-      console.warn('[Home Image] No image found for product:', {
+      // No image found - show placeholder
+      console.warn('[Home Image] ⚠️ No image found for product:', {
         title: item?.title,
+        price: item?.price,
         hasImgurl: !!item?.imgurl,
         imgUrlCount: item?.imgurl?.length || 0,
         hasImageURI: !!item?.imageURI,
-        keys: Object.keys(item || {})
+        imgurlContent: item?.imgurl
       });
-      return '';
+      
+      // Return placeholder
+      return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23e3f2fd" width="200" height="200"/%3E%3Ctext x="50%" y="40%" text-anchor="middle" dy=".3em" fill="%231976d2" font-family="Arial" font-size="12" font-weight="bold"%3E' + encodeURIComponent(item?.title?.substring(0, 15) || 'Product') + '%3C/text%3E%3Ctext x="50%" y="55%" text-anchor="middle" dy=".3em" fill="%23999" font-family="Arial" font-size="11"%3ENo Image%3C/text%3E%3C/svg%3E';
     } catch (err) {
       console.error('[Home Image] Error getting image:', err);
-      return '';
+      return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23ffebee" width="200" height="200"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23d32f2f" font-family="Arial" font-size="14"%3EError%3C/text%3E%3C/svg%3E';
     }
   };
 
