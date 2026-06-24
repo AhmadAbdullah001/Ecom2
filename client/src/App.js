@@ -1,5 +1,5 @@
 // App.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Alert from './components/Alert';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
@@ -28,6 +28,11 @@ function AppContent({ showAlert }) {
   const location = useLocation();
   const hideNavbarRoutes = ['/login', '/signup', '/admin'];
   const shouldShowNavbar = !hideNavbarRoutes.includes(location.pathname);
+
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   return (
     <>

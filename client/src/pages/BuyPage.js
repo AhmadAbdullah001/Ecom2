@@ -53,6 +53,10 @@ function BuyPage(props) {
   const context = useContext(itemContext)
   const { fetchDetails, updateAddress } = context
 
+  // Get product data from navigation state (declare BEFORE hooks)
+  let currentitem = loc.state?.current || loc.state || {};
+  const [img, setimg] = useState();
+
   // Initialize Cashfree SDK on component mount
   useEffect(() => {
     const initializeCashfree = async () => {
@@ -82,18 +86,74 @@ function BuyPage(props) {
     getDetails();
   }, []);
 
-  let currentitem = loc.state;
-  const [img, setimg] = useState();
+  // Validate product data on mount
+  useEffect(() => {
+    if (!currentitem) {
+      console.error('[BuyPage] No product data received!');
+      props.showalert("Product data not found. Please select a product again.", "danger");
+      return;
+    }
+
+    const missingFields = [];
+    if (!currentitem.head && !currentitem.title) missingFields.push("product name");
+    if (!currentitem.price) missingFields.push("price");
+    if (!currentitem.imgurl || (Array.isArray(currentitem.imgurl) && currentitem.imgurl.length === 0)) {
+      missingFields.push("product image");
+    }
+
+    if (missingFields.length > 0) {
+      console.warn('[BuyPage] ⚠️ Product has missing data:', missingFields);
+      console.log('[BuyPage] Product object:', {
+        head: currentitem.head,
+        title: currentitem.title,
+        price: currentitem.price,
+        imgurl: currentitem.imgurl,
+        imageURI: currentitem.imageURI,
+      });
+      
+      if (!currentitem.price) {
+        props.showalert(`⚠️ Product price is missing. Please contact support.`, "warning");
+      }
+    }
+  }, [currentitem, props]);
 
   useEffect(() => {
-    if (Array.isArray(currentitem.current.imgurl)) {
-      setimg(normalizeImageSrc(currentitem.current.imgurl[0]));
-    } else {
-      setimg(normalizeImageSrc(currentitem.current.imageURI));
+    console.log('[BuyPage] Current item:', {
+      title: currentitem?.title,
+      price: currentitem?.price,
+      hasImgurl: !!currentitem?.imgurl,
+      imgurlLength: Array.isArray(currentitem?.imgurl) ? currentitem.imgurl.length : 0,
+    });
+
+    if (currentitem) {
+      // Try imgurl first (from products), then imageURI (from cart items)
+      if (Array.isArray(currentitem.imgurl) && currentitem.imgurl.length > 0 && currentitem.imgurl[0]) {
+        setimg(normalizeImageSrc(currentitem.imgurl[0]));
+      } else if (currentitem.imageURI) {
+        setimg(normalizeImageSrc(currentitem.imageURI));
+      } else {
+        // Fallback to placeholder
+        console.warn('[BuyPage] No image URL found for product:', currentitem.title);
+        setimg(null);
+      }
     }
   }, [currentitem]);
 
-  const price = Number(currentitem.current.price.slice(1));
+  // Helper function to parse price - handles both "$58.7" and "58.7" formats
+  const parsePrice = (priceStr) => {
+    if (!priceStr) {
+      console.warn('[BuyPage Price] Price is null or empty!');
+      return 0;
+    }
+    // Remove $ if present and convert to number
+    const numStr = typeof priceStr === 'string' ? priceStr.replace(/[$,]/g, '') : priceStr.toString();
+    const num = parseFloat(numStr);
+    const result = isNaN(num) ? 0 : num;
+    console.log('[BuyPage Price] Parsed:', { input: priceStr, output: result });
+    return result;
+  };
+
+  const price = parsePrice(currentitem?.price);
   const subtotal = (price * qty).toFixed(2);
   const gst = (0.18 * price * qty).toFixed(2);
   const delivery = 5.00;
@@ -158,7 +218,7 @@ function BuyPage(props) {
         },
         body: JSON.stringify({
           imageURI: img,
-          title: currentitem.current.head || currentitem.current.title,
+          title: currentitem.head || currentitem.title,
           price: total,
           date: formattedDate,
           paymentMethod: 'COD',
@@ -216,7 +276,7 @@ function BuyPage(props) {
         body: JSON.stringify({
           amount: total,
           currency: "INR",
-          productName: currentitem.current.head || currentitem.current.title,
+          productName: currentitem.head || currentitem.title,
           quantity: qty,
           imageURI: img,
           date: formattedDate
@@ -485,13 +545,17 @@ function BuyPage(props) {
               <div className="product-item">
                 <div className="product-image">
                   <img 
-                    src={img} 
-                    alt={currentitem.current.title || currentitem.current.head || "Product"}
+                    src={img || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23f0f0f0" width="200" height="200"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23999" font-family="Arial" font-size="14"%3ENo Image%3C/text%3E%3C/svg%3E'} 
+                    alt={currentitem.title || currentitem.head || "Product"}
+                    onError={(e) => {
+                      console.warn('[BuyPage Image] Image failed to load:', img);
+                      e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23ffe3e3" width="200" height="200"/%3E%3Ctext x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%23d32f2f" font-family="Arial" font-size="12"%3EImage Not Available%3C/text%3E%3C/svg%3E';
+                    }}
                   />
                 </div>
                 <div className="product-details">
-                  <h4 className="product-name">{currentitem.current.head}</h4>
-                  <p className="product-subtitle">{currentitem.current.title}</p>
+                  <h4 className="product-name">{currentitem.head || 'Product'}</h4>
+                  <p className="product-subtitle">{currentitem.title || 'No description available'}</p>
 
                   {/* Quantity Selector */}
                   <div className="quantity-selector">

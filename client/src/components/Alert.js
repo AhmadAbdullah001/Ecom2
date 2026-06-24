@@ -1,8 +1,14 @@
 import React from 'react'
+import './alert.css'
+
 export default function Alert(props) {
   return (
-    props.alert && <div className={`alert alert-${props.alert.type} alert-dismissible fade show`} style={{position:"absolute",top:"5.8vh",zIndex:"10",width:"99.5vw"}} role="alert">
-  <strong> {props.alert.msg}</strong>
-</div>
+    props.alert && (
+      <div className={`custom-alert custom-alert-${props.alert.type} alert-show`} role="alert">
+        <div className="alert-content">
+          <strong>{props.alert.msg}</strong>
+        </div>
+      </div>
+    )
   )
 }

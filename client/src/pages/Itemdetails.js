@@ -91,7 +91,7 @@ function Itemdetails(props) {
       return;
     }
 
-    nav("/buypage", { state: { current } });
+    nav("/buypage", { state: current });
   };
 
   const submitReview = async () => {

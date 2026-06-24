@@ -30,23 +30,28 @@ function Home(props) {
       const productArray = Array.isArray(temp) ? temp.filter(Boolean) : [];
       console.log('[Home] ✅ Total valid products:', productArray.length);
 
-      // Show all products on home page (no category filter)
-      // This ensures products display even if category system hasn't been set up
-      if (productArray.length > 0) {
-        console.log('[Home] 🎉 Displaying all', productArray.length, 'products');
+      // Filter for only "home" category products
+      const homeProducts = productArray.filter(p => 
+        p.categoryName && p.categoryName.toLowerCase() === 'home'
+      );
+      
+      console.log('[Home] 🏠 Home category products:', homeProducts.length);
+
+      if (homeProducts.length > 0) {
+        console.log('[Home] 🎉 Displaying', homeProducts.length, 'home products');
         
         // Show product summary
-        productArray.slice(0, 3).forEach((p, i) => {
+        homeProducts.slice(0, 3).forEach((p, i) => {
           console.log(`  Product ${i + 1}: ${p.title} - Rs.${p.price}`, {
             hasImages: !!p.imgurl && p.imgurl.length > 0,
             imageCount: p.imgurl?.length || 0
           });
         });
         
-        setItems(productArray);
+        setItems(homeProducts);
       } else {
-        console.warn('[Home] ⚠️ No products found in database');
-        props.showalert?.('No products available', 'info');
+        console.warn('[Home] ⚠️ No products found with categoryName="home"');
+        props.showalert?.('No products available for home page. Please add products with categoryName="home"', 'info');
         setItems([]);
       }
     } catch (err) {
