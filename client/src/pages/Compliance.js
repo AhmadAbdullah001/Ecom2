@@ -5,7 +5,7 @@ export default function Compliance() {
   return (
     <StaticPage
       title="Compliance"
-      description="Understand how Neon Gear complies with global hardware and data standards." 
+      description="Understand how GearUP complies with global hardware and data standards." 
       sections={[
         {
           heading: 'Regulatory Standards',
@@ -17,7 +17,7 @@ export default function Compliance() {
         {
           heading: 'Environmental Responsibility',
           content: [
-            'Neon Gear supports responsible packaging and recycling practices for hardware components.',
+            'GearUP supports responsible packaging and recycling practices for hardware components.',
             'Contact support if you require product compliance documentation or certifications.',
           ],
         },

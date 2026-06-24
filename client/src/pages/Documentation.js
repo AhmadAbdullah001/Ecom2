@@ -5,7 +5,7 @@ export default function Documentation() {
   return (
     <StaticPage
       title="Documentation"
-      description="Find setup instructions, compatibility guides, and pro tips for your Neon Gear system."
+      description="Find setup instructions, compatibility guides, and pro tips for your GearUP system."
       sections={[
         {
           heading: 'Getting Started',

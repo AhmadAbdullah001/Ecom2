@@ -29,72 +29,80 @@ function Signup(props) {
 
     setIsLoading(true);
 
-    // Getting Address using Location API
-    let address = "";
+    const createAccount = async (addressValue = "") => {
+      try {
+        const res = await fetch(`${API_HOST}/api/auth/signup`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: details.name,
+            email: details.email,
+            phone: details.phone,
+            password: details.password,
+            address: addressValue,
+          }),
+        });
+
+        const note = await res.json();
+
+        if (note.flag === 2) {
+          props.showalert(
+            addressValue ? "Account Created Successfully" : "Account Created Successfully without location",
+            "success"
+          );
+          navigate("/login");
+        } else if (note.flag === 1) {
+          props.showalert("Account already exists", "warning");
+          navigate("/login");
+        } else {
+          props.showalert("Error occurred", "danger");
+        }
+      } catch (error) {
+        props.showalert("An error occurred. Please try again.", "danger");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     const fetchAddress = async (lat, long) => {
       try {
         const apiKey = "c8e92377fa1b473c8d917eca49aa6198";
         const apiEndpoint = `https://api.opencagedata.com/geocode/v1/json?key=${apiKey}&q=${lat}%2C${long}&pretty=1`;
         const locRes = await fetch(apiEndpoint);
         const data = await locRes.json();
-        address = data.results[0].formatted;
-        return address;
+        const formatted = data.results?.[0]?.formatted || "";
+        return formatted;
       } catch (error) {
         console.log("Error fetching address:", error);
-        return "err";
+        return "";
       }
     };
 
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const lat = position.coords.latitude;
-        const long = position.coords.longitude;
-        const caddress = await fetchAddress(lat, long);
-        
-        if (caddress === "err") {
-          props.showalert("Error Getting Location", "warning");
-          setIsLoading(false);
-          return;
-        }
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const lat = position.coords.latitude;
+          const long = position.coords.longitude;
+          const caddress = await fetchAddress(lat, long);
 
-        try {
-          const res = await fetch(`${API_HOST}/api/auth/signup`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              name: details.name,
-              email: details.email,
-              phone: details.phone,
-              password: details.password,
-              address: caddress,
-            }),
-          });
-
-          const note = await res.json();
-
-          if (note.flag === 2) {
-            props.showalert("Account Created Successfully", "success");
-            navigate("/login");
-          } else if (note.flag === 1) {
-            props.showalert("Account already exists", "warning");
-            navigate("/login");
-          } else {
-            props.showalert("Error occurred", "danger");
+          if (!caddress) {
+            props.showalert("Location permission accepted but address lookup failed. Account will still be created.", "warning");
           }
-        } catch (error) {
-          props.showalert("An error occurred. Please try again.", "danger");
-        } finally {
-          setIsLoading(false);
-        }
-      },
-      (error) => {
-        console.log("Error getting location", error);
-        props.showalert("Please enable location services", "warning");
-        setIsLoading(false);
-      }
-    );
+          createAccount(caddress || "");
+        },
+        (error) => {
+          console.log("Error getting location", error);
+          props.showalert("Location denied or unavailable. Account will still be created.", "info");
+          createAccount("");
+        },
+        { timeout: 10000 }
+      );
+    } else {
+      props.showalert("Location services are not supported. Creating account without location.", "info");
+      createAccount("");
+    }
   };
 
   const navigateToLogin = () => {

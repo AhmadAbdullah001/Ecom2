@@ -48,6 +48,7 @@ export default function CategoryPageTemplate({
           image: product.imgurl && product.imgurl.length > 0 ? product.imgurl[0] : '',
           badge: '',
           rawProduct: product,
+          createdAt: product.createdAt || new Date(),
         }));
 
         setProducts(transformedProducts);

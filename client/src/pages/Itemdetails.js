@@ -25,7 +25,7 @@ function Itemdetails(props) {
 
   const [url, setUrl] = useState(normalizeImageSrc(images[0]));
   const [reviews, setReviews] = useState([]);
-  const [review, setReview] = useState({ comment: "" });
+  const [review, setReview] = useState({ comment: "", rating: 0 });
 
   useEffect(() => {
     if (!current) {
@@ -62,7 +62,7 @@ function Itemdetails(props) {
     productdetails,
   } = current;
 
-  const productTitle = head || title || "Neon Gear Product";
+  const productTitle = head || title || "GearUP Product";
   const productDescription =
     title ||
     "Precision engineering meets premium materials for high-performance everyday use.";
@@ -100,16 +100,22 @@ function Itemdetails(props) {
       return;
     }
 
+    if (!review.rating || review.rating < 1) {
+      props.showalert("Please select a star rating", "warning");
+      return;
+    }
+
     const newReview = {
       uid,
       Name: localStorage.getItem("Current") || "Guest",
       comment: review.comment.trim(),
+      rating: review.rating,
     };
 
     const savedReview = await addreview(newReview);
     if (savedReview && !savedReview.error) {
       setReviews((prev) => [savedReview, ...prev]);
-      setReview({ comment: "" });
+      setReview({ comment: "", rating: 0 });
       props.showalert("Review submitted", "success");
     }
   };
@@ -150,9 +156,9 @@ function Itemdetails(props) {
             <div className="item-rating-row">
               <span className="item-badge">New Arrival</span>
               <div className="item-stars">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <span className="material-symbols-outlined" key={star}>
-                    star
+                {Array.from({ length: 5 }, (_, idx) => (
+                  <span className="material-symbols-outlined" key={idx}>
+                    {idx < Math.round(reviews.reduce((sum, item) => sum + (item.rating || 0), 0) / Math.max(reviews.length, 1)) ? 'star' : 'star_border'}
                   </span>
                 ))}
                 <small>({reviews.length || 0} Reviews)</small>
@@ -212,18 +218,25 @@ function Itemdetails(props) {
         <div className="item-review-form">
           <h2>Write a review</h2>
           <div className="item-form-stars">
-            {[1, 2, 3, 4].map((star) => (
-              <span className="material-symbols-outlined" key={star}>
-                star
-              </span>
+            {[1, 2, 3, 4, 5].map((starValue) => (
+              <button
+                key={starValue}
+                type="button"
+                className={review.rating >= starValue ? 'selected-star' : ''}
+                onClick={() => setReview((prev) => ({ ...prev, rating: starValue }))}
+                aria-label={`Rate ${starValue} star${starValue > 1 ? 's' : ''}`}
+              >
+                <span className="material-symbols-outlined">
+                  {review.rating >= starValue ? 'star' : 'star_border'}
+                </span>
+              </button>
             ))}
-            <span className="material-symbols-outlined muted">star</span>
           </div>
           <textarea
             placeholder={`Share your experience with ${productTitle}...`}
             rows="4"
             value={review.comment}
-            onChange={(event) => setReview({ comment: event.target.value })}
+            onChange={(event) => setReview((prev) => ({ ...prev, comment: event.target.value }))}
           />
           <button type="button" onClick={submitReview}>
             Submit Review
@@ -246,11 +259,11 @@ function Itemdetails(props) {
               <article className="item-review-card" key={reviewItem._id || index}>
                 <div className="item-review-card-head">
                   <div>
-                    <strong>{reviewItem.Name || "Neon Gear User"}</strong>
+                    <strong>{reviewItem.Name || "GearUP User"}</strong>
                     <div className="item-stars">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <span className="material-symbols-outlined" key={star}>
-                          star
+                      {Array.from({ length: 5 }, (_, idx) => (
+                        <span className="material-symbols-outlined" key={idx}>
+                          {idx < (reviewItem.rating || 0) ? 'star' : 'star_border'}
                         </span>
                       ))}
                     </div>

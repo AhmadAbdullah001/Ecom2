@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function ItemPageTemplate({
@@ -10,10 +10,52 @@ export default function ItemPageTemplate({
   promo = null,
 }) {
   const navigate = useNavigate();
+  const [page, setPage] = useState(1);
+  const [sortBy, setSortBy] = useState('performance');
+  const itemsPerPage = 2;
+
+  const parsePrice = (value) => {
+    const priceString = typeof value === 'string' ? value.replace(/[^0-9.]/g, '') : String(value);
+    return parseFloat(priceString) || 0;
+  };
+
+  const sortedProducts = useMemo(() => {
+    const list = Array.isArray(products) ? [...products] : [];
+
+    if (sortBy === 'price-asc') {
+      return list.sort((a, b) => parsePrice(a.price) - parsePrice(b.price));
+    }
+
+    if (sortBy === 'newest') {
+      return list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }
+
+    return list;
+  }, [products, sortBy]);
+
+  const pageCount = Math.max(1, Math.ceil(sortedProducts.length / itemsPerPage));
+
+  const paginatedProducts = useMemo(() => {
+    const start = (page - 1) * itemsPerPage;
+    return sortedProducts.slice(start, start + itemsPerPage);
+  }, [page, sortedProducts]);
+
+  const handlePageChange = (newPage) => {
+    const normalizedPage = Math.min(Math.max(1, newPage), pageCount);
+    setPage(normalizedPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const goToDetails = (product) => {
     if (product?.rawProduct) {
       navigate('/itemdetails', { state: product.rawProduct });
+    }
+  };
+
+  const scrollToProducts = () => {
+    const section = document.getElementById('category-products');
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
@@ -58,16 +100,23 @@ export default function ItemPageTemplate({
             <span className="text-label-sm font-label-sm text-secondary">Showing {products.length} items</span>
             <div className="flex items-center gap-2">
               <span className="text-label-sm font-label-sm text-secondary">Sort by:</span>
-              <select className="bg-transparent border-none font-label-sm text-label-sm text-dark focus:ring-0 cursor-pointer">
-                <option>Performance (High to Low)</option>
-                <option>Price (Low to High)</option>
-                <option>Newest Arrivals</option>
+              <select
+                className="bg-transparent border-none font-label-sm text-label-sm text-dark focus:ring-0 cursor-pointer"
+                value={sortBy}
+                onChange={(e) => {
+                  setSortBy(e.target.value);
+                  setPage(1);
+                }}
+              >
+                <option value="performance">Performance (High to Low)</option>
+                <option value="price-asc">Price (Low to High)</option>
+                <option value="newest">Newest Arrivals</option>
               </select>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-gutter">
-            {products.map((p, idx) => (
+          <div id="category-products" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-gutter">
+            {paginatedProducts.map((p, idx) => (
               <div className="group" key={idx}>
                 <button
                   className="relative aspect-square bg-surface-container-low rounded-xl overflow-hidden mb-4 border border-outline-variant transition-all duration-300 group-hover:border-primary/50 group-hover:shadow-lg w-full cursor-pointer"
@@ -104,20 +153,54 @@ export default function ItemPageTemplate({
                 <div className="relative z-10">
                   <h3 className="font-headline-lg text-headline-lg mb-4">{promo.title}</h3>
                   <p className="font-body-md text-body-md text-on-primary-container max-w-md mb-6">{promo.description}</p>
-                  <button className="px-8 py-3 bg-on-primary text-dark font-label-md text-label-md rounded-lg hover:opacity-90 transition-opacity">{promo.cta || 'Explore'}</button>
+                  <button
+                    className="px-8 py-3 bg-on-primary text-dark font-label-md text-label-md rounded-lg hover:opacity-90 transition-opacity"
+                    type="button"
+                    onClick={scrollToProducts}
+                  >
+                    {promo.cta || 'Explore'}
+                  </button>
                 </div>
               </div>
             )}
           </div>
 
           <div className="mt-20 flex justify-center items-center gap-4">
-            <button className="w-12 h-12 flex items-center justify-center rounded-full border border-outline-variant text-secondary hover:text-dark transition-colors"><span className="material-symbols-outlined">chevron_left</span></button>
+            <button
+              className="w-12 h-12 flex items-center justify-center rounded-full border border-outline-variant text-secondary hover:text-dark transition-colors"
+              type="button"
+              onClick={() => handlePageChange(page - 1)}
+              disabled={page === 1}
+            >
+              <span className="material-symbols-outlined">chevron_left</span>
+            </button>
+
             <div className="flex items-center gap-2">
-              <button className="w-10 h-10 flex items-center justify-center rounded-full bg-dark text-on-primary font-label-md">1</button>
-              <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-colors font-label-md">2</button>
-              <button className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high transition-colors font-label-md">3</button>
+              {Array.from({ length: pageCount }, (_, index) => {
+                const pageIndex = index + 1;
+                return (
+                  <button
+                    key={pageIndex}
+                    type="button"
+                    onClick={() => handlePageChange(pageIndex)}
+                    className={`w-10 h-10 flex items-center justify-center rounded-full font-label-md transition-colors ${
+                      pageIndex === page ? 'bg-dark text-on-primary' : 'hover:bg-surface-container-high text-secondary'
+                    }`}
+                  >
+                    {pageIndex}
+                  </button>
+                );
+              })}
             </div>
-            <button className="w-12 h-12 flex items-center justify-center rounded-full border border-outline-variant text-secondary hover:text-dark transition-colors"><span className="material-symbols-outlined">chevron_right</span></button>
+
+            <button
+              className="w-12 h-12 flex items-center justify-center rounded-full border border-outline-variant text-secondary hover:text-dark transition-colors"
+              type="button"
+              onClick={() => handlePageChange(page + 1)}
+              disabled={page === pageCount}
+            >
+              <span className="material-symbols-outlined">chevron_right</span>
+            </button>
           </div>
         </div>
       </div>

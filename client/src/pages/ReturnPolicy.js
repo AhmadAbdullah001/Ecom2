@@ -5,7 +5,7 @@ export default function ReturnPolicy() {
   return (
     <StaticPage
       title="Return Policy"
-      description="Review our return and refund process for purchases made through Neon Gear." 
+      description="Review our return and refund process for purchases made through GearUP." 
       sections={[
         {
           heading: '30-Day Returns',

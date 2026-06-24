@@ -4,22 +4,24 @@ const review = require('../models/ReviewSchema');
 // const fetchuser=require('../middleware/fetchuser')
 // Router to POST Items
 router.post('/addreview', async (req, res) => {
-    const {uid,Name,comment} = req.body;
-    
+    const { uid, Name, comment, rating } = req.body;
+
     // Validate input fields
     if (!Name) return res.status(400).json({ error: "Name is required" });
-    if (!comment) return res.status(400).json({ error: "Comment is required" });  
-    if (!uid) return res.status(400).json({ error: "Id is required" });  
+    if (!comment) return res.status(400).json({ error: "Comment is required" });
+    if (!uid) return res.status(400).json({ error: "Id is required" });
+    if (!rating || typeof rating !== 'number' || rating < 1 || rating > 5) {
+      return res.status(400).json({ error: "Rating must be a number between 1 and 5" });
+    }
 
     try {
-  
       const newreview = new review({
-        uid,       
+        uid,
         Name,
         comment,
-        // user:req.user.id,
+        rating,
       });
-  
+
       await newreview.save();
       res.json(newreview);
     } catch (error) {

@@ -7,7 +7,7 @@ export default function StaticPage({ title, description, sections }) {
       <section className="home-hero">
         <div className="home-shell home-hero-grid">
           <div className="home-hero-copy">
-            <span className="home-eyebrow">Neon Gear</span>
+            <span className="home-eyebrow">GearUP</span>
             <h1>{title}</h1>
             <p>{description}</p>
             <div className="home-actions">

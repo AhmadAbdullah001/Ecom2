@@ -45,7 +45,7 @@ function Navbar() {
           </button>
 
           <Link to="/" className="logo-brand" onClick={closeMenu}>
-            <span className="logo-text">Neon Gear</span>
+            <span className="logo-text">GearUP</span>
           </Link>
         </div>
 

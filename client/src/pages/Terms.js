@@ -5,7 +5,7 @@ export default function Terms() {
   return (
     <StaticPage
       title="Terms of Service"
-      description="Review the terms governing your purchase and use of Neon Gear products." 
+      description="Review the terms governing your purchase and use of GearUP products." 
       sections={[
         {
           heading: 'User Obligations',

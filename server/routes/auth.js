@@ -11,7 +11,7 @@ const JWT_SECRET=process.env.JWT_SECRET || 'Abdullahisgood$oy'
 //For Signup
 router.post('/signup',async(req,res)=>{
   var flag=1;
-    const {name,email,phone,password,address}=req.body
+    const {name,email,phone,password,address = ""}=req.body
     if(!email)
       return res.status(404).json({error:"Email required"})
     if(!name)
@@ -20,8 +20,6 @@ router.post('/signup',async(req,res)=>{
       return res.status(404).json({error:"Phone required"})
     if(!password)
       return res.status(404).json({error:"Password required"})
-    if(!address)
-      return res.status(404).json({error:"Address required"})
     const existing=await user.findOne({email})
     if(existing)return res.json({flag})
       else flag=2

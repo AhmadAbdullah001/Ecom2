@@ -184,7 +184,7 @@ function Profile(props) {
   };
 
   const displayName =
-    user?.name || localStorage.getItem("Current") || "Neon Gear User";
+    user?.name || localStorage.getItem("Current") || "GearUP User";
   const email = user?.email || localStorage.getItem("Current") || "Signed in";
   const latestOrders = orders.slice(0, 2);
 
@@ -479,7 +479,7 @@ function Profile(props) {
       <footer className="profile-footer">
         <div className="profile-footer-shell">
           <div>
-            <h2>NEON GEAR</h2>
+            <h2>GearUP</h2>
             <p>
               Engineered for performance. Designed for the minimalist.
               Experience the future of hardware.
@@ -501,7 +501,7 @@ function Profile(props) {
           </div>
         </div>
         <div className="profile-footer-bottom">
-          <p>Copyright 2026 NEON GEAR STUDIO. All Rights Reserved.</p>
+          <p>Copyright 2026 GearUP Studio. All Rights Reserved.</p>
           <div>
             <Link to="/privacy">Privacy</Link>
             <Link to="/terms">Terms</Link>

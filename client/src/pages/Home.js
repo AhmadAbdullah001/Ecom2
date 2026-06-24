@@ -271,7 +271,7 @@ function Home(props) {
       <footer className="home-footer">
         <div className="home-shell home-footer-grid">
           <div>
-            <h3>Neon Gear</h3>
+            <h3>GearUP</h3>
             <p>
               Precision engineered hardware for creators, engineers, and digital
               architects.
@@ -297,7 +297,7 @@ function Home(props) {
           </div>
         </div>
         <div className="home-shell home-footer-bottom">
-          <p>Copyright 2026 Neon Gear. Precision Engineered.</p>
+          <p>Copyright 2026 GearUP. Precision Engineered.</p>
           <div>
             <span className="material-symbols-outlined">public</span>
             <span className="material-symbols-outlined">share</span>

@@ -24,7 +24,7 @@ password:{
 },
 address:{
   type:String,
-  required:true
+  default:''
 }
 })
 module.exports=mongoose.model('user',UserSchema)

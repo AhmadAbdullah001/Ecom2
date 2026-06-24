@@ -62,7 +62,7 @@ function Login(props) {
             <div className="login-content">
                 {/* Logo/Brand Section */}
                 <div className="login-brand">
-                    <h1 className="brand-title">gameGears</h1>
+                    <h1 className="brand-title">GearUP</h1>
                     <p className="brand-subtitle">Premium Gaming Experience</p>
                 </div>
 
@@ -83,7 +83,7 @@ function Login(props) {
                                     id="email"
                                     name="email"
                                     className="form-input"
-                                    placeholder="name@neon-gear.com"
+                                    placeholder="name@gearup.com"
                                     value={details.email}
                                     onChange={onchange}
                                     required

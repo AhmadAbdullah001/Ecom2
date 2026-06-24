@@ -5,7 +5,7 @@ export default function Privacy() {
   return (
     <StaticPage
       title="Privacy Policy"
-      description="Learn how we collect, use, and protect your information when you shop with Neon Gear."
+      description="Learn how we collect, use, and protect your information when you shop with GearUP."
       sections={[
         {
           heading: 'Data Use',
