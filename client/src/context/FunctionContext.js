@@ -63,6 +63,24 @@ function FunctionContext(props) {
     }
   };
 
+  // Search Products
+  const searchProducts = async (query) => {
+    try {
+      const endpoint = `${API_HOST}/api/product/search?q=${encodeURIComponent(query)}`;
+      const res = await fetch(endpoint);
+      if (!res.ok) {
+        const errorBody = await res.text();
+        console.error('[Search Products] HTTP Error:', res.status, res.statusText, errorBody);
+        throw new Error(`Search request failed: ${res.status}`);
+      }
+      const data = await readJsonResponse(res, 'Search products');
+      return Array.isArray(data) ? data : [];
+    } catch (err) {
+      console.error('[Search Products] Error:', err.message);
+      return [];
+    }
+  };
+
 
   // Fetch User Details
   const fetchDetails = async () => {
@@ -407,6 +425,7 @@ function FunctionContext(props) {
         addtocart,
         fetchDetails,
         fetchproducts,
+        searchProducts,
         addproduct,
         addreview,
         getreview,

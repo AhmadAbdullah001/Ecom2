@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import itemContext from "../context/Context";
 import { normalizeImageSrc } from "../utils/images";
@@ -8,8 +8,14 @@ import "../styles/home.css";
 function Home(props) {
   const nav = useNavigate();
   const context = useContext(itemContext);
-  const { addtocart, fetchproducts, getCategories } = context;
+  const { addtocart, fetchproducts, getCategories, searchProducts } = context;
   const [items, setItems] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchStatus, setSearchStatus] = useState(null);
+  const searchTimeout = useRef(null);
+  const searchWrapper = useRef(null);
 
   const goToDetails = (item) => {
     nav("/itemdetails", { state: item });
@@ -68,6 +74,54 @@ function Home(props) {
   const addItem = (item) => {
     addtocart(item);
   };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    setSearchResults([]);
+    setSearchStatus(null);
+    setIsSearchOpen(false);
+  };
+
+  const runSearch = async (query) => {
+    if (!query.trim()) {
+      clearSearch();
+      return;
+    }
+    setSearchStatus('loading');
+    const results = await searchProducts(query.trim());
+    setSearchResults(results.slice(0, 3));
+    setSearchStatus(results.length === 0 ? 'empty' : 'ready');
+    setIsSearchOpen(true);
+  };
+
+  const handleSearchChange = (value) => {
+    setSearchQuery(value);
+    if (searchTimeout.current) {
+      clearTimeout(searchTimeout.current);
+    }
+    searchTimeout.current = setTimeout(() => runSearch(value), 350);
+  };
+
+  const handleResultClick = (product) => {
+    nav('/itemdetails', { state: product });
+    clearSearch();
+  };
+
+  const handleClickOutside = (event) => {
+    if (searchWrapper.current && !searchWrapper.current.contains(event.target)) {
+      setIsSearchOpen(false);
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      if (searchTimeout.current) {
+        clearTimeout(searchTimeout.current);
+      }
+    };
+  }, []);
 
   const getProductImage = (item) => {
     try {
@@ -152,6 +206,41 @@ function Home(props) {
               Discover high-performance gear for creative workflows, gaming,
               productivity, and everyday power users.
             </p>
+            <div className="home-search" ref={searchWrapper}>
+              <input
+                type="search"
+                className="home-search-input"
+                placeholder="Search all products"
+                value={searchQuery}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                aria-label="Search products"
+              />
+              {isSearchOpen && (
+                <div className="home-search-results">
+                  {searchStatus === 'loading' && (
+                    <div className="home-search-empty">Searching...</div>
+                  )}
+                  {searchStatus === 'empty' && (
+                    <div className="home-search-empty">No products found</div>
+                  )}
+                  {searchStatus === 'ready' && searchResults.map((product) => (
+                    <button
+                      key={product._id}
+                      type="button"
+                      className="home-search-result"
+                      onClick={() => handleResultClick(product)}
+                    >
+                      <img
+                        src={product.imgurl?.[0] || ''}
+                        alt={product.head || product.title || 'Product'}
+                        className="home-search-result-image"
+                      />
+                      <span>{product.head || product.title}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="home-actions">
               <a className="home-btn home-btn-primary" href="#signature-series">
                 Shop Now

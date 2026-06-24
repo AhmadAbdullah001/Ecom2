@@ -125,6 +125,33 @@ router.get("/fetchproducts", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+router.get("/search", async (req, res) => {
+  try {
+    const query = (req.query.q || "").trim();
+    if (!query) {
+      return res.json([]);
+    }
+
+    const safeQuery = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const regex = new RegExp(safeQuery, "i");
+
+    const results = await product
+      .find({
+        $or: [
+          { title: regex },
+          { head: regex },
+          { categoryName: regex },
+        ],
+      })
+      .limit(3);
+
+    res.json(results);
+  } catch (error) {
+    console.error('[Product API] Search error:', error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 router.get("/fetchhomeproducts", async (req, res) => {
   try {
     const list = await product.find();
