@@ -196,9 +196,9 @@ function Profile(props) {
         <header className="profile-header">
           <div className="profile-identity">
             <div className="profile-avatar-wrap">
-              <div className="profile-avatar">
+              <div className="profile-avatar overflow-hidden">
                 {profileAvatar ? (
-                  <img src={normalizeImageSrc(profileAvatar)} alt="Profile avatar" />
+                  <img  style={{ width: "100%", height: "100%", objectFit: "cover" }} src={normalizeImageSrc(profileAvatar)} alt="Profile avatar" />
                 ) : (
                   <span className="material-symbols-outlined">person</span>
                 )}
@@ -217,7 +217,7 @@ function Profile(props) {
                 accept="image/*"
                 style={{ display: "none" }}
                 onChange={handleAvatarSelect}
-              />
+              />      
               {avatarFile && (
                 <div className="profile-avatar-actions">
                   <button type="button" className="profile-upload-btn" onClick={handleUploadAvatar} disabled={loading}>
@@ -385,10 +385,6 @@ function Profile(props) {
                     <p>{user?.address || "No saved address available."}</p>
                   </div>
                 </div>
-                <button className="profile-dashed-btn" type="button" onClick={() => setIsEditingAddress(true)}>
-                  <span className="material-symbols-outlined">add_location</span>
-                  Add New Address
-                </button>
               </>
             )}
           </section>

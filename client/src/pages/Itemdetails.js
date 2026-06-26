@@ -16,6 +16,10 @@ function Itemdetails(props) {
       return current.imgurl;
     }
 
+    if (typeof current?.imgurl === 'string' && current.imgurl.trim()) {
+      return [current.imgurl];
+    }
+
     if (current?.imageURI) {
       return [current.imageURI];
     }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { API_HOST } from '../config'
 import '../styles/login.css'
@@ -8,6 +8,10 @@ function Login(props) {
     const [details, setdetails] = useState({ email: "", password: "" })
     const [isLoading, setIsLoading] = useState(false)
     const [rememberMe, setRememberMe] = useState(false)
+    const [stage, setStage] = useState('form') // 'form' or 'verify'
+    const [otp, setOtp] = useState('')
+    const [timeLeft, setTimeLeft] = useState(0)
+    const [resendEnabled, setResendEnabled] = useState(false)
 
     const onchange = (e) => {
         setdetails({ ...details, [e.target.name]: e.target.value })
@@ -16,34 +20,96 @@ function Login(props) {
     const handleclick = async (e) => {
         e.preventDefault()
         setIsLoading(true)
-        
         try {
-            const res = await fetch(`${API_HOST}/api/auth/login`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ email: details.email, password: details.password })
+            const res = await fetch(`${API_HOST}/api/auth/send-otp`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ purpose: 'login', email: details.email })
             })
-            const note = await res.json();
-            
-            if (note.flag === true) {
-                props.showalert('Login Successful', 'success')
-                localStorage.setItem('token', note.authToken)
-                localStorage.setItem('Current', details.email)
-                if (rememberMe) {
-                    localStorage.setItem('rememberMe', 'true')
-                }
-                navigate('/')
-            }
-            else {
-                props.showalert('Invalid Credentials', 'danger')
+            const note = await res.json()
+            if (res.ok) {
+                props.showalert('OTP sent to your email. Enter it to login.', 'info')
+                setStage('verify')
+                startOtpTimer()
+                setResendEnabled(false)
+                setTimeout(() => setResendEnabled(true), 10000)
+            } else {
+                props.showalert(note.message || 'Unable to send OTP', 'danger')
             }
         } catch (error) {
             props.showalert('An error occurred. Please try again.', 'danger')
-        } finally {
-            setIsLoading(false)
+        } finally { setIsLoading(false) }
+    }
+
+    const startOtpTimer = () => {
+        setTimeLeft(300)
+    }
+
+    useEffect(() => {
+        if (stage !== 'verify') return
+        if (timeLeft <= 0) return
+
+        const interval = setInterval(() => {
+            setTimeLeft((prev) => {
+                if (prev <= 1) {
+                    clearInterval(interval)
+                    return 0
+                }
+                return prev - 1
+            })
+        }, 1000)
+
+        return () => clearInterval(interval)
+    }, [stage, timeLeft])
+
+    const resendOtp = async () => {
+        if (!details.email) {
+            props.showalert('Email is required to resend OTP', 'warning')
+            return
         }
+        setIsLoading(true)
+        try {
+            const res = await fetch(`${API_HOST}/api/auth/resend-otp`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ purpose: 'login', email: details.email })
+            })
+            const note = await res.json()
+            if (res.ok) {
+                props.showalert('OTP resent to your email.', 'info')
+                startOtpTimer()
+                setResendEnabled(false)
+                setTimeout(() => setResendEnabled(true), 10000)
+            } else {
+                props.showalert(note.message || 'Unable to resend OTP', 'danger')
+            }
+        } catch (err) {
+            props.showalert('An error occurred. Please try again.', 'danger')
+        } finally { setIsLoading(false) }
+    }
+
+    const verifyOtp = async (e) => {
+        e.preventDefault()
+        setIsLoading(true)
+        try {
+            const res = await fetch(`${API_HOST}/api/auth/verify-otp`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ purpose: 'login', email: details.email, otp })
+            })
+            const note = await res.json()
+            if (res.ok) {
+                props.showalert('Login Successful', 'success')
+                localStorage.setItem('token', note.token)
+                localStorage.setItem('Current', details.email)
+                if (rememberMe) localStorage.setItem('rememberMe', 'true')
+                navigate('/')
+            } else {
+                props.showalert(note.message || 'Invalid OTP', 'danger')
+            }
+        } catch (err) {
+            props.showalert('An error occurred. Please try again.', 'danger')
+        } finally { setIsLoading(false) }
     }
 
     const navigateToSignup = () => {
@@ -111,27 +177,15 @@ function Login(props) {
                             </div>
                         </div>
 
-                        {/* Remember Me Checkbox */}
-                        <div className="checkbox-wrapper">
-                            <input
-                                type="checkbox"
-                                id="maintain"
-                                name="maintain"
-                                className="form-checkbox"
-                                checked={rememberMe}
-                                onChange={(e) => setRememberMe(e.target.checked)}
-                            />
-                            <label htmlFor="maintain" className="checkbox-label">Maintain Persistent Link</label>
-                        </div>
-
                         {/* Action Buttons */}
+                        {stage === 'form' && (
                         <div className="form-actions">
                             <button
                                 type="submit"
                                 className="btn btn-primary"
                                 disabled={isLoading}
                             >
-                                {isLoading ? 'Authenticating...' : 'Login'}
+                                {isLoading ? 'Sending OTP...' : 'Login with OTP'}
                             </button>
 
                             <div className="divider">
@@ -146,6 +200,25 @@ function Login(props) {
                                 Register
                             </button>
                         </div>
+                        )}
+
+                        {stage === 'verify' && (
+                            <div className="form-actions">
+                                <div className="form-group">
+                                    <label htmlFor="otp" className="form-label">Enter OTP</label>
+                                    <div className="input-wrapper">
+                                        <input id="otp" name="otp" className="form-input" value={otp} onChange={(e)=>setOtp(e.target.value)} required />
+                                    </div>
+                                </div>
+                                <div className="otp-meta">
+                                    <span className="timer-text">Expires in: {timeLeft > 0 ? `${Math.floor(timeLeft / 60)}:${String(timeLeft % 60).padStart(2, '0')}` : '00:00'}</span>
+                                    <button type="button" className="btn btn-secondary" onClick={resendOtp} disabled={!resendEnabled || isLoading}>
+                                        {isLoading ? 'Resending...' : 'Resend OTP'}
+                                    </button>
+                                </div>
+                                <button type="button" className="btn btn-primary" onClick={verifyOtp} disabled={isLoading}>{isLoading ? 'Verifying...' : 'Verify OTP'}</button>
+                            </div>
+                        )}
                     </form>
                 </div>
 

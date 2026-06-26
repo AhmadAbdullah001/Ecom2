@@ -7,6 +7,8 @@ const fetchuser=require('../middleware/fetchuser')
 const upload = require('../middleware/multer')
 const cloudinary = require('../config/cloudinary')
 const JWT_SECRET=process.env.JWT_SECRET || 'Abdullahisgood$oy'
+const redisClient = require('../config/redis')
+const transporter = require('../config/mailer')
 
 //For Signup
 router.post('/signup',async(req,res)=>{
@@ -166,4 +168,107 @@ router.post("/getuser", fetchuser, async (req, res) => {
   });
   
   // Export the router
+  // OTP endpoints: send, resend, verify (by email)
+  router.post('/send-otp', async (req, res) => {
+    const { email, purpose, ...signupData } = req.body // purpose: 'login' or 'signup'
+    try {
+      if (!email) return res.status(400).json({ message: 'Email required' })
+      if (purpose === 'login') {
+        const exist = await user.findOne({ email })
+        if (!exist) return res.status(400).json({ message: 'User not found' })
+      }
+      if (purpose === 'signup') {
+        const exist = await user.findOne({ email })
+        if (exist) return res.status(400).json({ message: 'User already exists' })
+      }
+
+      const otp = Math.floor(100000 + Math.random() * 900000).toString()
+      await redisClient.set(`otp:${purpose}:${email}`, otp, { EX: 300 })
+      if (purpose === 'signup') {
+        await redisClient.set(`signup:${email}`, JSON.stringify(signupData), { EX: 600 })
+      }
+
+      // send email
+      const mailOptions = {
+        from: process.env.SMTP_FROM || 'no-reply@example.com',
+        to: email,
+        subject: 'Your OTP Code',
+        text: `Your verification code is ${otp}. It expires in 5 minutes.`
+      }
+      await transporter.sendMail(mailOptions)
+
+      res.status(200).json({ message: 'OTP sent successfully', success: true })
+    } catch (error) {
+      console.log('Error in sending OTP:', error)
+      res.status(500).json({ message: 'Server error' })
+    }
+  })
+
+  router.post('/resend-otp', async (req, res) => {
+    const { email, purpose } = req.body
+    try {
+      if (!email) return res.status(400).json({ message: 'Email required' })
+      let otp = await redisClient.get(`otp:${purpose}:${email}`)
+      if (!otp) {
+        otp = Math.floor(100000 + Math.random() * 900000).toString()
+        await redisClient.set(`otp:${purpose}:${email}`, otp, { EX: 300 })
+      } else {
+        await redisClient.expire(`otp:${purpose}:${email}`, 300)
+      }
+      const mailOptions = {
+        from: process.env.SMTP_FROM || 'no-reply@example.com',
+        to: email,
+        subject: 'Your OTP Code',
+        text: `Your verification code is ${otp}. It expires in 5 minutes.`
+      }
+      await transporter.sendMail(mailOptions)
+      res.status(200).json({ message: 'OTP sent successfully', success: true })
+    } catch (error) {
+      console.log('Error in resending OTP:', error)
+      res.status(500).json({ message: 'Server error' })
+    }
+  })
+
+  router.post('/verify-otp', async (req, res) => {
+    const { email, otp, purpose } = req.body
+    try {
+      if (!email || !otp) return res.status(400).json({ message: 'Email and OTP required' })
+      const storedOTP = await redisClient.get(`otp:${purpose}:${email}`)
+      if (!storedOTP) return res.status(400).json({ message: 'OTP expired or not found' })
+      if (storedOTP !== otp) return res.status(400).json({ message: 'Invalid OTP' })
+
+      if (purpose === 'login') {
+        const existing = await user.findOne({ email })
+        if (!existing) return res.status(400).json({ message: 'User not found' })
+        const payload = { user: { id: existing.id } }
+        const authToken = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' })
+        await redisClient.del(`otp:${purpose}:${email}`)
+        return res.status(200).json({ message: 'OTP verified successfully', token: authToken })
+      }
+
+      if (purpose === 'signup') {
+        const dataRaw = await redisClient.get(`signup:${email}`)
+        if (!dataRaw) return res.status(400).json({ message: 'Signup data expired' })
+        const signupData = JSON.parse(dataRaw)
+        const { name, phone, password, address = '' } = signupData
+        const existing = await user.findOne({ email })
+        if (existing) return res.status(400).json({ message: 'User already exists' })
+        const salt = await bcrypt.genSalt(10)
+        const newpass = await bcrypt.hash(password, salt)
+        const newUser = new user({ name, email, phone, password: newpass, address })
+        await newUser.save()
+        const payload = { user: { id: newUser.id } }
+        const authToken = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' })
+        await redisClient.del(`otp:${purpose}:${email}`)
+        await redisClient.del(`signup:${email}`)
+        return res.status(200).json({ message: 'Signup verified and completed', token: authToken })
+      }
+
+      res.status(400).json({ message: 'Invalid purpose' })
+    } catch (error) {
+      console.log('Error in verifying OTP:', error)
+      res.status(500).json({ message: 'Server error' })
+    }
+  })
+
   module.exports = router;

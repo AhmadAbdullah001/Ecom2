@@ -129,6 +129,8 @@ function BuyPage(props) {
       // Try imgurl first (from products), then imageURI (from cart items)
       if (Array.isArray(currentitem.imgurl) && currentitem.imgurl.length > 0 && currentitem.imgurl[0]) {
         setimg(normalizeImageSrc(currentitem.imgurl[0]));
+      } else if (typeof currentitem.imgurl === 'string' && currentitem.imgurl.trim()) {
+        setimg(normalizeImageSrc(currentitem.imgurl));
       } else if (currentitem.imageURI) {
         setimg(normalizeImageSrc(currentitem.imageURI));
       } else {

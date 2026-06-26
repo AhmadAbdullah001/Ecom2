@@ -230,7 +230,7 @@ function Home(props) {
                       className="home-search-result"
                       onClick={() => handleResultClick(product)}
                     >
-                      <img
+                      <img loading="lazy"
                         src={product.imgurl?.[0] || ''}
                         alt={product.head || product.title || 'Product'}
                         className="home-search-result-image"
@@ -252,7 +252,7 @@ function Home(props) {
           </div>
 
           <div className="home-hero-media" style={{backgroundColor:"white"}}>
-            <img
+            <img loading="lazy"
               src={getProductImage(heroProduct)}
               style={{ objectFit: "contain",backgroundColor:"transparent" }}
               
@@ -306,7 +306,7 @@ function Home(props) {
                     onClick={() => goToDetails(item)}
                     aria-label={`View ${item.head || item.title || "product"} details`}
                   >
-                    <img style={{objectFit:"contain"}}
+                    <img loading="lazy" style={{objectFit:"contain"}}
                       src={getProductImage(item)}
                       alt={item.head || item.title || "Product"}
                     />

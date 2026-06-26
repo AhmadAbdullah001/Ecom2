@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_HOST } from "../config";
 import '../styles/signup.css'
@@ -14,6 +14,10 @@ function Signup(props) {
   const [showPassword, setShowPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [stage, setStage] = useState('form') // 'form' or 'verify'
+  const [otp, setOtp] = useState('')
+  const [timeLeft, setTimeLeft] = useState(0)
+  const [resendEnabled, setResendEnabled] = useState(false)
 
   const onChange = (e) => {
     setDetails({ ...details, [e.target.name]: e.target.value });
@@ -29,81 +33,84 @@ function Signup(props) {
 
     setIsLoading(true);
 
-    const createAccount = async (addressValue = "") => {
-      try {
-        const res = await fetch(`${API_HOST}/api/auth/signup`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            name: details.name,
-            email: details.email,
-            phone: details.phone,
-            password: details.password,
-            address: addressValue,
-          }),
-        });
-
-        const note = await res.json();
-
-        if (note.flag === 2) {
-          props.showalert(
-            addressValue ? "Account Created Successfully" : "Account Created Successfully without location",
-            "success"
-          );
-          navigate("/login");
-        } else if (note.flag === 1) {
-          props.showalert("Account already exists", "warning");
-          navigate("/login");
-        } else {
-          props.showalert("Error occurred", "danger");
-        }
-      } catch (error) {
-        props.showalert("An error occurred. Please try again.", "danger");
-      } finally {
-        setIsLoading(false);
+    try {
+      const res = await fetch(`${API_HOST}/api/auth/send-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          purpose: 'signup',
+          email: details.email,
+          name: details.name,
+          phone: details.phone,
+          password: details.password,
+          address: ''
+        })
+      })
+      const note = await res.json()
+      if (res.ok) {
+        props.showalert('OTP sent to your email. Enter it to complete signup.', 'info')
+        setStage('verify')
+        startOtpTimer()
+        setResendEnabled(false)
+        setTimeout(() => setResendEnabled(true), 10000)
+      } else {
+        props.showalert(note.message || 'Unable to send OTP', 'danger')
       }
-    };
-
-    const fetchAddress = async (lat, long) => {
-      try {
-        const apiKey = "c8e92377fa1b473c8d917eca49aa6198";
-        const apiEndpoint = `https://api.opencagedata.com/geocode/v1/json?key=${apiKey}&q=${lat}%2C${long}&pretty=1`;
-        const locRes = await fetch(apiEndpoint);
-        const data = await locRes.json();
-        const formatted = data.results?.[0]?.formatted || "";
-        return formatted;
-      } catch (error) {
-        console.log("Error fetching address:", error);
-        return "";
-      }
-    };
-
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const lat = position.coords.latitude;
-          const long = position.coords.longitude;
-          const caddress = await fetchAddress(lat, long);
-
-          if (!caddress) {
-            props.showalert("Location permission accepted but address lookup failed. Account will still be created.", "warning");
-          }
-          createAccount(caddress || "");
-        },
-        (error) => {
-          console.log("Error getting location", error);
-          props.showalert("Location denied or unavailable. Account will still be created.", "info");
-          createAccount("");
-        },
-        { timeout: 10000 }
-      );
-    } else {
-      props.showalert("Location services are not supported. Creating account without location.", "info");
-      createAccount("");
+    } catch (err) {
+      props.showalert('An error occurred. Please try again.', 'danger')
+    } finally {
+      setIsLoading(false)
     }
   };
+
+  const startOtpTimer = () => {
+    setTimeLeft(300)
+  }
+
+  useEffect(() => {
+    if (stage !== 'verify') return
+    if (timeLeft <= 0) return
+
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [stage, timeLeft])
+
+  const resendOtp = async () => {
+    if (!details.email) {
+      props.showalert('Email is required to resend OTP', 'warning')
+      return
+    }
+    setIsLoading(true)
+    try {
+      const res = await fetch(`${API_HOST}/api/auth/resend-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ purpose: 'signup', email: details.email })
+      })
+      const note = await res.json()
+      if (res.ok) {
+        props.showalert('OTP resent to your email.', 'info')
+        startOtpTimer()
+        setResendEnabled(false)
+        setTimeout(() => setResendEnabled(true), 10000)
+      } else {
+        props.showalert(note.message || 'Unable to resend OTP', 'danger')
+      }
+    } catch (err) {
+      props.showalert('An error occurred. Please try again.', 'danger')
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const navigateToLogin = () => {
     navigate("/login");
@@ -128,7 +135,8 @@ function Signup(props) {
         </div>
 
         {/* Form */}
-        <form className="signup-form" onSubmit={handleClick}>
+        {stage === 'form' && (
+          <form className="signup-form" onSubmit={handleClick}>
           {/* Full Name */}
           <div className="form-group">
             <label htmlFor="name" className="form-label">Full Name</label>
@@ -234,6 +242,43 @@ function Signup(props) {
             <span className="material-symbols-outlined btn-icon">arrow_forward</span>
           </button>
         </form>
+        )}
+
+        {stage === 'verify' && (
+          <form className="signup-form" onSubmit={async (e) => {
+            e.preventDefault()
+            setIsLoading(true)
+            try {
+              const res = await fetch(`${API_HOST}/api/auth/verify-otp`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ purpose: 'signup', email: details.email, otp })
+              })
+              const note = await res.json()
+              if (res.ok) {
+                props.showalert('Signup complete', 'success')
+                localStorage.setItem('token', note.token)
+                navigate('/')
+              } else {
+                props.showalert(note.message || 'Invalid OTP', 'danger')
+              }
+            } catch (err) {
+              props.showalert('An error occurred. Please try again.', 'danger')
+            } finally { setIsLoading(false) }
+          }}>
+            <div className="form-group">
+              <label htmlFor="otp" className="form-label">Enter OTP</label>
+              <div className="input-wrapper">
+                <input id="otp" name="otp" className="form-input" value={otp} onChange={(e)=>setOtp(e.target.value)} required />
+              </div>
+            </div>
+            <div className="otp-meta">
+              <span className="timer-text">Expires in: {timeLeft > 0 ? `${Math.floor(timeLeft / 60)}:${String(timeLeft % 60).padStart(2, '0')}` : '00:00'}</span>
+              <button type="button" className="btn btn-secondary" onClick={resendOtp} disabled={!resendEnabled || isLoading}>{isLoading ? 'Resending...' : 'Resend OTP'}</button>
+            </div>
+            <button className="btn btn-primary" type="submit" disabled={isLoading}>{isLoading ? 'Verifying...' : 'Verify OTP'}</button>
+          </form>
+        )}
 
         {/* Login Redirect */}
         <p className="login-redirect">
